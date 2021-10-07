@@ -1,6 +1,6 @@
 #include "Voxel.h"
 
-Voxel::Voxel(Color color_, int reflection_k_) {
-	color = color_;
-	reflection_k = reflection_k_;
+Voxel::Voxel(Color _color, int _reflection_k) {
+	color = _color;
+	reflection_k = _reflection_k;
 }

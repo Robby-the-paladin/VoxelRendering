@@ -3,6 +3,6 @@ class Color {
 public:
 	int r, g, b, a;
 	Color() {};
-	Color(int r_, int g_, int b_, int a_);
+	Color(int _r, int _g, int _b, int _a);
 };
 

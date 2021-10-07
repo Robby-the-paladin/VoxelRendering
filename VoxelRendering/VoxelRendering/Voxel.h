@@ -5,6 +5,6 @@ public:
 	Color color;
 	int reflection_k;
 	Voxel() {};
-	Voxel(Color color_, int reflection_k_);
+	Voxel(Color _color, int _reflection_k);
 };
 

@@ -147,10 +147,16 @@
   <ItemGroup>
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Node.cpp" />
+    <ClCompile Include="Tree.cpp" />
+    <ClCompile Include="Vec3.cpp" />
     <ClCompile Include="Voxel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Color.h" />
+    <ClInclude Include="Node.h" />
+    <ClInclude Include="Tree.h" />
+    <ClInclude Include="Vec3.h" />
     <ClInclude Include="Voxel.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

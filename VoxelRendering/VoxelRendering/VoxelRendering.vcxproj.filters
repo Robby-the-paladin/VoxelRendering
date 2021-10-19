@@ -30,8 +30,11 @@
     <ClCompile Include="Tree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Vec3.cpp">
+    <ClCompile Include="Serializer.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Vec3.cpp">
+      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -48,6 +51,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Vec3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Serializer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

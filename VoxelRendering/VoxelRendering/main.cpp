@@ -47,7 +47,7 @@ int main()
 
     // build and compile our shader program
     // ------------------------------------
-    Shader ourShader("shader.vert", "shader.frag"); // you can name your shader files however you like
+    Shader ourShader("shader.vert", "shader.frag");
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
@@ -109,6 +109,9 @@ int main()
         // render
         glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        // GAME STEP
+        
 
         // draw triangle
         ourShader.use();

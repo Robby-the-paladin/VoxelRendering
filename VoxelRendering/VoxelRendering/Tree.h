@@ -1,8 +1,10 @@
 #pragma once
 #include <vector>
 #include <GLFW/glfw3.h>
+#include <queue>
 #include "Node.h"
 #include "Vec3.h"
+#include "Shader.h"
 using namespace std;
 class Tree {
 private:
@@ -21,5 +23,7 @@ public:
 	void destroy();
 	void set(Vec3 coords0, Vec3 coords1, Voxel value);
 	Voxel* get(Vec3 coords);
+	
+	void shader_serializing(Shader* shader, Vec3 beg, Vec3 end);
 };
 

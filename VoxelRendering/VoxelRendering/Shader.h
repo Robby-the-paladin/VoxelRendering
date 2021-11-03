@@ -1,5 +1,4 @@
 #pragma once
-#define SHADER_H
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -22,6 +21,7 @@ public:
     void setBool(const std::string& name, bool value) const;
     void setInt(const std::string& name, int value) const;
     void setFloat(const std::string& name, float value) const;
+    void set3f(const std::string& name, float val1, float val2, float val3);
 
 private:
     // utility function for checking shader compilation/linking errors.

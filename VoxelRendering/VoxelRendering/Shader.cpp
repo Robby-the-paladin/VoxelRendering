@@ -36,6 +36,10 @@ void Shader::setBool(const std::string& name, bool value) const {
     glUniform1i(glGetUniformLocation(ID, name.c_str()), (int)value);
 }
 
+void Shader::set3f(const std::string& name, float val1, float val2, float val3) {
+    glUniform3f(glGetUniformLocation(ID, name.c_str()), val1, val2, val3);
+}
+
 void Shader::use() {
     glUseProgram(ID);
 }

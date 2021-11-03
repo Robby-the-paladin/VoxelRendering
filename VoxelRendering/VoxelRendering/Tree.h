@@ -1,10 +1,11 @@
 #pragma once
 #include <vector>
-#include <GLFW/glfw3.h>
 #include <queue>
 #include "Node.h"
 #include "Vec3.h"
 #include "Shader.h"
+#include <GLFW/glfw3.h>
+
 using namespace std;
 class Tree {
 private:

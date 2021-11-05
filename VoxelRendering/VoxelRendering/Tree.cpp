@@ -146,6 +146,7 @@ void Tree::shader_serializing(Shader* shader, Vec3 beg, Vec3 end) {
 		string curShNode = "tree[" + to_string(num) + "]";
 		shader->setBool(curShNode + ".terminal", cur->terminal);
 		if (cur->terminal) {
+			shader->setBool(curShNode + ".voxel.empty", cur->voxel.empty);
 			shader->set3f(curShNode + ".voxel.color", cur->voxel.color.r, cur->voxel.color.g, cur->voxel.color.b);
 			shader->setFloat(curShNode + ".voxel.reflection_k", cur->voxel.reflection_k);
 		}

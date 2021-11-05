@@ -10,6 +10,7 @@ in vec2 gl_PointCoord; // координаты точки на экране
 struct Voxel {
     vec3 color;
     float reflection_k;
+    bool empty;
 };
 
 struct Node {
@@ -19,9 +20,18 @@ struct Node {
    
 };
 
+struct Camera {
+    vec2 resolution;
+    vec3 camera_pos;
+    float camera_size;
+    float render_distance;
+};
+
 uniform Node tree[1000];
 uniform vec3 treer;
 uniform vec3 treel;
+
+uniform Camera cam;
 
 bool belongs(vec3 l, vec3 r, vec3 point) {
     float eps = 0.0000001;
@@ -79,10 +89,17 @@ struct Raycasting_response {
     vec3 point;
 };
 
-int raycasting(vec3 beg, vec3 end, int node_num, vec3 l, vec3 r) {
+Raycasting_request raycasting_requests[1000];
+int top_num = -1;
+
+Raycasting_response raycasting(vec3 beg, vec3 end, int node_num, vec3 l, vec3 r) {
     if (tree[node_num].terminal) {
-        // если пуста€ вершина возращать -1 в node_num
-        // иначе номер node_num и beg в point
+        if (tree[node_num].voxel.empty) { // если пуста€ вершина возращать -1 в node_num
+            return Raycasting_response(-1, end);
+        }
+        else { // иначе номер node_num и beg в point
+            return Raycasting_response(node_num, beg);
+        }
     }
     vec3 ap[3] = line_plane_intersections(beg, end, int((l.x + r.x) / 2), int((l.y + r.y) / 2), int((l.z + r.z) / 2));
     vec3 p[5];
@@ -92,8 +109,8 @@ int raycasting(vec3 beg, vec3 end, int node_num, vec3 l, vec3 r) {
     p[3] = beg;
     p[4] = end;
     p = sort(p, beg, beg, end);
-    for (int t = 0; t < 4; t++) {
-        if (belongs(beg, end, p[t + 1])) {
+    for (int t = 4; t > 0; t--) {
+        if (belongs(beg, end, p[t])) {
             for (int i = 0; i < 2; i++) {
 		        for (int j = 0; j < 2; j++) {
 			        for (int k = 0; k < 2; k++) {
@@ -101,18 +118,34 @@ int raycasting(vec3 beg, vec3 end, int node_num, vec3 l, vec3 r) {
                         vec3 add = vec3(i * (r.x - l.x) / 2, j * (r.y - l.y) / 2, k * (r.z - l.z) / 2);
 					    vec3 newl = l + add;
 					    vec3 newr = ((r + l) / 2) + add;
+                        if (belongs(newl, newr, p[t]) && belongs(newl, newr, p[t - 1])) {
+                            top_num++;
+                            raycasting_requests[top_num] = Raycasting_request(p[t - 1], p[t], new_num, newl, newr);
+                        }
 			        }
                 }
 		    }
 	    }   
     }
+    return Raycasting_response(-1, end);
+}
+
+Raycasting_response raylaunching(vec3 beg, vec3 end) {
+    top_num++;
+    raycasting_requests[top_num] = Raycasting_request(beg, end, 0, treel, treer);
+    while(top_num != -1) {
+        Raycasting_request req = raycasting_requests[top_num];
+        top_num--;
+        Raycasting_response ans = raycasting(req.beg, req.end, req.node_num, req.l, req.r);
+        if (ans.node_num != -1) {
+            return ans;
+        }
+    }
+    return Raycasting_response(-1, end);
 }
 
 void main() {
     vec2 xy = gl_PointCoord.xy;
-    vec4 solidRed = vec4(0.4,0.4,0.0,1.0); //“еперь он стал чЄрным
-    if(xy.x > 0.5){
-        solidRed = vec4(ourColor, 1.0f);
-    }
-    FragColor = solidRed;
+    vec2 coords = xy * cam.resolution;
+    
 }

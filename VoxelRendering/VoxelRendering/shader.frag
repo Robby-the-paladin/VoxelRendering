@@ -29,11 +29,13 @@ struct Camera {
     // float tilt_angle; // угол наклона камеры (не используется default 90)
 };
 
-uniform Node tree[1000];
+uniform Node tree[100];
 uniform vec3 treer;
 uniform vec3 treel;
 
 uniform Camera cam;
+
+uniform Node coloor[100];
 
 bool belongs(vec3 l, vec3 r, vec3 point) {
     float eps = 0.0000001;
@@ -91,7 +93,7 @@ struct Raycasting_response {
     vec3 point;
 };
 
-Raycasting_request raycasting_requests[1000];
+Raycasting_request raycasting_requests[10];
 int top_num = -1;
 
 Raycasting_response raycasting(vec3 beg, vec3 end, int node_num, vec3 l, vec3 r) {
@@ -140,6 +142,7 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
         top_num--;
         Raycasting_response ans = raycasting(req.beg, req.end, req.node_num, req.l, req.r);
         if (ans.node_num != -1) {
+            FragColor = vec4(255, 0, 255, 1);
             return ans;
         }
     }
@@ -172,6 +175,11 @@ void main() {
     vec3 end = normalize(point - beg) * cam.render_distance + beg; // конец трассируемого отрезка с учётом дальности прорисовки
 
     // номер вершины в которую попал луч (или -1) и точка в которую попал луч (или конец отрезка)
+    FragColor = vec4(0, 0, 0, 1);
     Raycasting_response ans = raylaunching(beg, end);
-    FragColor = vec4(tree[ans.node_num].voxel.color, 1.0);
+    if (ans.node_num != -1) {
+       FragColor = vec4(tree[ans.node_num].voxel.color, 1.0);
+    } else {
+       FragColor = vec4(tree[0].voxel.color, 1.0);
+    }
 }

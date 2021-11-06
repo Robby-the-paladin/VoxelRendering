@@ -2,6 +2,7 @@
 #include <GLFW/glfw3.h>
 
 #include "Shader.h"
+#include "Tree.h"
 
 #include <iostream>
 
@@ -11,6 +12,36 @@ void processInput(GLFWwindow* window);
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+
+Tree tree;
+
+void init() {
+    vector<vector<vector<Voxel>>> mat;
+    mat.resize(8);
+    for (int i = 0; i < 8; i++) {
+        mat[i].resize(8);
+        for (int j = 0; j < 8; j++) {
+            mat[i][j].resize(8);
+            for (int k = 0; k < 8; k++) {
+                mat[i][j][k].color = Color(255, 0, 0, 255);
+                mat[i][j][k].empty = false;
+                mat[i][j][k].reflection_k = 0;
+            }
+        }
+    }
+    tree.build(mat);
+}
+
+void step(Shader* shader) {
+    shader->set3f("coloor[0].voxel.color", 0, 255, 0);
+    tree.shader_serializing(shader, Vec3(0, 0, 0), Vec3(7, 7, 7));
+    /*shader->setBool("tree[0].terminal", true);
+    shader->set3f("tree[0].voxel.color", 0, 255, 255);
+    shader->setBool("tree[0].voxel.empty", false);
+    shader->setFloat("tree[0].voxel.reflection_k", 0);
+    shader->set3f("treel", 0, 0, 0);
+    shader->set3f("treer", 8, 8, 8);*/
+}
 
 int main()
 {
@@ -102,6 +133,7 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
+    init();
     // render loop
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
@@ -111,7 +143,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         // GAME STEP
-        
+        step(&ourShader);
 
         // draw triangle
         ourShader.use();

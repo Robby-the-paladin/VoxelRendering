@@ -4,7 +4,6 @@
 class Node {
 public:
 	bool terminal = true;
-	bool empty = true;
 	Voxel voxel;
 	Node* children[8];
 

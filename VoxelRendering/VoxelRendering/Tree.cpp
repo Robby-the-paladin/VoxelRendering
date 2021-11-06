@@ -1,22 +1,22 @@
 #include "Tree.h"
 
 Node* Tree::recursive_build(vector<vector<vector<Voxel>>>* mat, Vec3 coords0, Vec3 coords1) {
-	if (coords0 == coords1) {
-		if (mat->size() < coords0.x || mat->operator[](coords0.x).size() < coords0.y
-			|| mat->operator[](coords0.x)[coords0.y].size()) {
+	if (coords0 + Vec3(1, 1, 1) == coords1) {
+		if (mat->size() < coords1.x || mat->operator[](coords0.x).size() < coords1.y
+			|| mat->operator[](coords0.x)[coords0.y].size() < coords1.z) {
 			return nullptr;
 		}
 		Node* ans = new Node();
 		ans->terminal = 1;
 		ans->voxel = mat->operator[](coords0.x)[coords0.y][coords0.z];
+		return ans;
 	}
 	Node* children[8];
 	for (int i = 0; i < 2; i++) {
 		for (int j = 0; j < 2; j++) {
 			for (int k = 0; k < 2; k++) {
-				Node* child = children[i * 4 + j * 2 + k];
 				Vec3 add = Vec3(i * (coords1.x - coords0.x) / 2, j * (coords1.y - coords0.y) / 2, k * (coords1.z - coords0.z) / 2);
-				child = recursive_build(mat, coords0 + add, ((coords1 + coords0) / 2) + add);
+				children[i * 4 + j * 2 + k] = recursive_build(mat, coords0 + add, ((coords1 + coords0) / 2) + add);
 			}
 		}
 	}
@@ -116,7 +116,7 @@ void Tree::shader_serializing(Shader* shader, Vec3 beg, Vec3 end) {
 					Vec3 add = Vec3(i * (r.x - l.x) / 2, j * (r.y - l.y) / 2, k * (r.z - l.z) / 2);
 					Vec3 newl = l + add;
 					Vec3 newr = ((r + l) / 2) + add;
-					if (beg.belongs(newl, newr)) {
+					if (beg.belongs(newl, newr) && end.belongs(newl, newr)){
 						subroot = subroot->children[i * 4 + j * 2 + k];
 						l = newl;
 						r = newr;
@@ -139,11 +139,10 @@ void Tree::shader_serializing(Shader* shader, Vec3 beg, Vec3 end) {
 
 	// Serializing
 	q.push(make_pair(subroot, make_pair(-1, -1)));
-	int num = 0;
+	int k = 0;
 	while (!q.empty()) {
 		Node* cur = q.front().first;
-		q.pop();
-		string curShNode = "tree[" + to_string(num) + "]";
+		string curShNode = "tree[" + to_string(k) + "]";
 		shader->setBool(curShNode + ".terminal", cur->terminal);
 		if (cur->terminal) {
 			shader->setBool(curShNode + ".voxel.empty", cur->voxel.empty);
@@ -153,13 +152,14 @@ void Tree::shader_serializing(Shader* shader, Vec3 beg, Vec3 end) {
 		else {
 			for (int i = 0; i < 8; i++) {
 				if (cur->children[i] != nullptr) {
-					q.push(make_pair(cur->children[i], make_pair(num, i)));
+					q.push(make_pair(cur->children[i], make_pair(k, i)));
 				}
 			}
 		}
 		if (q.front().second.first != -1) {
-			shader->setInt("tree[" + to_string(q.front().second.first) + "].children[" + to_string(q.front().second.second) + "]", num);
+			shader->setInt("tree[" + to_string(q.front().second.first) + "].children[" + to_string(q.front().second.second) + "]", k);
 		}
-		num++;
+		q.pop();
+		k++;
 	}
 }

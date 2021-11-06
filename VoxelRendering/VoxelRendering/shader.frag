@@ -21,10 +21,12 @@ struct Node {
 };
 
 struct Camera {
-    vec2 resolution;
-    vec3 camera_pos;
-    float camera_size;
-    float render_distance;
+    vec2 resolution; // разрешение экрана
+    vec3 pos; // положние камеры в координтах мира
+    vec3 dir; // вектор направления камеры
+    float render_distance; // дальность прорисовки
+    float viewing_angle; // угол обзора
+    // float tilt_angle; // угол наклона камеры (не используется default 90)
 };
 
 uniform Node tree[1000];
@@ -145,7 +147,31 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
 }
 
 void main() {
-    vec2 xy = gl_PointCoord.xy;
-    vec2 coords = xy * cam.resolution;
-    
+    vec3 cam_dir = normalize(cam.dir);
+    // начало трассируемого отрезка
+    vec3 beg = cam.pos; // позиция камеры
+
+    // конец трассируемого отрезка
+    vec2 xy = gl_PointCoord.xy; // положение фрагмента на экране в отношении к размерам окна
+    vec2 coords = (xy - vec2(0.5, 0.5)) * cam.resolution; // положение пикселя на экране (центр экрана (0, 0))
+
+    vec3 old_x = normalize(cross(cam.dir, vec3(0, 0, 1))); // единичный вектор Ox для экрана в пространстве (x в старом базисе)
+    vec3 old_z = cam_dir; // единичный вектор Oz для экрана в пространстве (z в старом базисе)
+    vec3 old_y = normalize(cross(old_x, old_z)); // единичный вектор Oy для экрана в пространстве (y в старом базисе)
+    vec3 old_O = cam.pos; // центр координат старого СК в новом базисе
+    vec3 old_point = vec3(coords, 0); // положение точки в прострастве, через которую пройдёт луч, в старом базисе
+
+    // точка в прострастве, через которую пройдёт луч
+    vec3 point = vec3(
+                    old_x.x * old_point.x + old_y.x * old_point.y + old_z.x * old_point.z + old_O.x,
+                    old_x.y * old_point.x + old_y.y * old_point.y + old_z.y * old_point.z + old_O.y,
+                    old_x.z * old_point.x + old_y.z * old_point.y + old_z.z * old_point.z + old_O.z);
+
+    float cam_dist = tan(cam.viewing_angle) * cam.resolution.x; // расстояние от наблюдателя до экрана
+
+    vec3 end = normalize(point - beg) * cam.render_distance + beg; // конец трассируемого отрезка с учётом дальности прорисовки
+
+    // номер вершины в которую попал луч (или -1) и точка в которую попал луч (или конец отрезка)
+    Raycasting_response ans = raylaunching(beg, end);
+    FragColor = vec4(tree[ans.node_num].voxel.color, 1.0);
 }

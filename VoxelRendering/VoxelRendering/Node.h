@@ -7,7 +7,7 @@ public:
 	Voxel voxel;
 	Node* children[8];
 
-	Node() {};
+	Node();
 	Node(Node* _children[8]);
 };
 

@@ -70,8 +70,10 @@ Voxel* Tree::get(Vec3 coords) {
 void Tree::push(Node* node) {
 	if (node->terminal) {
 		for (int i = 0; i < 8; i++) {
-			node->children[i]->terminal = true;
-			node->children[i]->voxel = node->voxel;
+			if (node->children[i] != nullptr) {
+				node->children[i]->terminal = true;
+				node->children[i]->voxel = node->voxel;
+			}
 		}
 	}
 }
@@ -81,10 +83,11 @@ void Tree::recursive_set(Node* node, Vec3 l, Vec3 r, Vec3 coords0, Vec3 coords1,
 		return;
 	}
 	if (!coords0.belongs(l, r) && !coords1.belongs(l, r)) {
-		if (l.belongs(coords0, coords1) && r.belongs(coords0, coords1)) {
-			node->terminal = true;
-			node->voxel = value;
-		}
+		return;
+	}
+	if (l.belongs(coords0, coords1) && r.belongs(coords0, coords1 + Vec3(1, 1, 1))) {
+		node->terminal = true;
+		node->voxel = value;
 		return;
 	}
 	push(node);
@@ -146,7 +149,7 @@ void Tree::shader_serializing(Shader* shader, Vec3 beg, Vec3 end) {
 		shader->setBool(curShNode + ".terminal", cur->terminal);
 		if (cur->terminal) {
 			shader->setBool(curShNode + ".voxel.empty", cur->voxel.empty);
-			shader->set3f(curShNode + ".voxel.color", cur->voxel.color.r, cur->voxel.color.g, cur->voxel.color.b);
+			shader->set3f(curShNode + ".voxel.color", 1.0 * cur->voxel.color.r / 255.0, 1.0 * cur->voxel.color.g / 255.0, 1.0 * cur->voxel.color.b / 255.0);
 			shader->setFloat(curShNode + ".voxel.reflection_k", cur->voxel.reflection_k);
 		}
 		else {

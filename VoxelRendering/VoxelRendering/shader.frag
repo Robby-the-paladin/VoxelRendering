@@ -35,8 +35,6 @@ uniform vec3 treel;
 
 uniform Camera cam;
 
-uniform Node coloor[100];
-
 bool belongs(vec3 l, vec3 r, vec3 point) {
     float eps = 0.0000001;
     return !(!(point.x + eps >= l.x && point.y + eps >= l.y && point.z + eps >= l.z) ||
@@ -180,6 +178,6 @@ void main() {
     if (ans.node_num != -1) {
        FragColor = vec4(tree[ans.node_num].voxel.color, 1.0);
     } else {
-       FragColor = vec4(tree[0].voxel.color, 1.0);
+       FragColor = vec4(0, 0, 0, 1.0);
     }
 }

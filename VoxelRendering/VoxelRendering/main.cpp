@@ -23,7 +23,7 @@ void init() {
         for (int j = 0; j < 8; j++) {
             mat[i][j].resize(8);
             for (int k = 0; k < 8; k++) {
-                mat[i][j][k].color = Color(255, 0, 0, 255);
+                mat[i][j][k].color = Color(200, 0, 0, 255);
                 mat[i][j][k].empty = false;
                 mat[i][j][k].reflection_k = 0;
             }
@@ -32,15 +32,12 @@ void init() {
     tree.build(mat);
 }
 
+int r = 0;
+
 void step(Shader* shader) {
-    shader->set3f("coloor[0].voxel.color", 0, 255, 0);
+    r = (r + 1) % 256;
+    tree.set(Vec3(0, 0, 0), Vec3(8, 8, 8), Voxel(Color(r, 0, 0, 1), 1, 0));
     tree.shader_serializing(shader, Vec3(0, 0, 0), Vec3(7, 7, 7));
-    /*shader->setBool("tree[0].terminal", true);
-    shader->set3f("tree[0].voxel.color", 0, 255, 255);
-    shader->setBool("tree[0].voxel.empty", false);
-    shader->setFloat("tree[0].voxel.reflection_k", 0);
-    shader->set3f("treel", 0, 0, 0);
-    shader->set3f("treer", 8, 8, 8);*/
 }
 
 int main()

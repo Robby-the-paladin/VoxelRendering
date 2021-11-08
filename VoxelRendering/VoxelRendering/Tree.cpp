@@ -1,4 +1,4 @@
-#include "Tree.h"
+﻿#include "Tree.h"
 
 Node* Tree::recursive_build(vector<vector<vector<Voxel>>>* mat, Vec3 coords0, Vec3 coords1) {
 	if (coords0 + Vec3(1, 1, 1) == coords1) {
@@ -106,6 +106,12 @@ void Tree::set(Vec3 coords0, Vec3 coords1, Voxel value) {
 	recursive_set(&root, Vec3(0, 0, 0), Vec3(max_size, max_size, max_size), coords0, coords1, value);
 }
 
+struct Sh_node {
+	GLint children[8];
+	GLint terminal_empty_align2[4];
+	GLfloat color_refl[4];
+};
+
 void Tree::shader_serializing(Shader* shader, Vec3 beg, Vec3 end) {
 	// Finding subroot (minimal root containing beg & end)
 	Vec3 l = Vec3(0, 0, 0), r = Vec3(max_size, max_size, max_size);
@@ -143,14 +149,19 @@ void Tree::shader_serializing(Shader* shader, Vec3 beg, Vec3 end) {
 	// Serializing
 	q.push(make_pair(subroot, make_pair(-1, -1)));
 	int k = 0;
+	vector<Sh_node> buffer;
 	while (!q.empty()) {
 		Node* cur = q.front().first;
+		Sh_node node;
 		string curShNode = "tree[" + to_string(k) + "]";
-		shader->setBool(curShNode + ".terminal", cur->terminal);
+		node.terminal_empty_align2[0] = cur->terminal;
+		//shader->setBool(curShNode + ".terminal", cur->terminal);
 		if (cur->terminal) {
-			shader->setBool(curShNode + ".voxel.empty", cur->voxel.empty);
-			shader->set3f(curShNode + ".voxel.color", 1.0 * cur->voxel.color.r / 255.0, 1.0 * cur->voxel.color.g / 255.0, 1.0 * cur->voxel.color.b / 255.0);
-			shader->setFloat(curShNode + ".voxel.reflection_k", cur->voxel.reflection_k);
+			node.terminal_empty_align2[1] = cur->voxel.empty;
+			node.color_refl[0] = 1.0 * cur->voxel.color.r / 255.0;
+			node.color_refl[1] = 1.0 * cur->voxel.color.g / 255.0;
+			node.color_refl[2] = 1.0 * cur->voxel.color.b / 255.0;
+			node.color_refl[3] = cur->voxel.reflection_k;
 		}
 		else {
 			for (int i = 0; i < 8; i++) {
@@ -160,9 +171,20 @@ void Tree::shader_serializing(Shader* shader, Vec3 beg, Vec3 end) {
 			}
 		}
 		if (q.front().second.first != -1) {
-			shader->setInt("tree[" + to_string(q.front().second.first) + "].children[" + to_string(q.front().second.second) + "]", k);
+			buffer[q.front().second.first].children[q.front().second.second] = k;
 		}
 		q.pop();
 		k++;
+		buffer.push_back(node);
 	}
+
+	GLuint ssbo = 0;
+	Sh_node* s = buffer.data();
+	glGenBuffers(1, &ssbo);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sh_node) * buffer.size(), s, GL_DYNAMIC_COPY);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	GLuint binding_point_index = 3;
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
 }

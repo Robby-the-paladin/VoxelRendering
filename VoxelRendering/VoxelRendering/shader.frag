@@ -1,23 +1,14 @@
-#version 330 core
+#version 430 core
 out vec4 FragColor;
-
-in vec3 ourColor;
 
 in vec4 gl_FragCoord; // координаты фрагмента
 
 in vec2 gl_PointCoord; // координаты точки на экране
 
-struct Voxel {
-    vec3 color;
-    float reflection_k;
-    bool empty;
-};
-
 struct Node {
-   int children[8];
-   bool terminal;
-   Voxel voxel;
-   
+   int children[8]; // 4 * 8 = 32 byte
+   int terminal_empty_align2[4]; // 16 byte
+   vec4 color_refl; // 16 byte
 };
 
 struct Camera {
@@ -29,7 +20,10 @@ struct Camera {
     // float tilt_angle; // угол наклона камеры (не используетс€ default 90)
 };
 
-uniform Node tree[100];
+layout(std430, binding = 3) buffer tree_buffer
+{
+    Node tree[];
+};
 uniform vec3 treer;
 uniform vec3 treel;
 
@@ -91,12 +85,12 @@ struct Raycasting_response {
     vec3 point;
 };
 
-Raycasting_request raycasting_requests[10];
+Raycasting_request raycasting_requests[100];
 int top_num = -1;
 
 Raycasting_response raycasting(vec3 beg, vec3 end, int node_num, vec3 l, vec3 r) {
-    if (tree[node_num].terminal) {
-        if (tree[node_num].voxel.empty) { // если пуста€ вершина возращать -1 в node_num
+    if (tree[node_num].terminal_empty_align2[0] != 0) {
+        if (tree[node_num].terminal_empty_align2[1] != 0) { // если пуста€ вершина возращать -1 в node_num
             return Raycasting_response(-1, end);
         }
         else { // иначе номер node_num и beg в point
@@ -153,8 +147,7 @@ void main() {
     vec3 beg = cam.pos; // позици€ камеры
 
     // конец трассируемого отрезка
-    vec2 xy = gl_PointCoord.xy; // положение фрагмента на экране в отношении к размерам окна
-    vec2 coords = (xy - vec2(0.5, 0.5)) * cam.resolution; // положение пиксел€ на экране (центр экрана (0, 0))
+    vec2 coords = gl_FragCoord.xy - (vec2(0.5, 0.5) * cam.resolution); // положение пиксел€ на экране (центр экрана (0, 0))
 
     vec3 old_x = normalize(cross(cam.dir, vec3(0, 0, 1))); // единичный вектор Ox дл€ экрана в пространстве (x в старом базисе)
     vec3 old_z = cam_dir; // единичный вектор Oz дл€ экрана в пространстве (z в старом базисе)
@@ -173,11 +166,10 @@ void main() {
     vec3 end = normalize(point - beg) * cam.render_distance + beg; // конец трассируемого отрезка с учЄтом дальности прорисовки
 
     // номер вершины в которую попал луч (или -1) и точка в которую попал луч (или конец отрезка)
-    FragColor = vec4(0, 0, 0, 1);
     Raycasting_response ans = raylaunching(beg, end);
     if (ans.node_num != -1) {
-       FragColor = vec4(tree[ans.node_num].voxel.color, 1.0);
+       FragColor = vec4(tree[ans.node_num].color_refl.xyz, 1.0);
     } else {
-       FragColor = vec4(0, 0, 0, 1.0);
+       FragColor = vec4(0, 1, 0, 1.0);
     }
 }

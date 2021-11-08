@@ -15,7 +15,7 @@ const unsigned int SCR_HEIGHT = 600;
 
 Tree tree;
 
-void init() {
+void init(Shader* shader) {
     vector<vector<vector<Voxel>>> mat;
     mat.resize(8);
     for (int i = 0; i < 8; i++) {
@@ -23,7 +23,7 @@ void init() {
         for (int j = 0; j < 8; j++) {
             mat[i][j].resize(8);
             for (int k = 0; k < 8; k++) {
-                mat[i][j][k].color = Color(200, 0, 0, 255);
+                mat[i][j][k].color = Color(200, 150, 0, 255);
                 mat[i][j][k].empty = false;
                 mat[i][j][k].reflection_k = 0;
             }
@@ -130,7 +130,7 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    init();
+    init(&ourShader);
     // render loop
     while (!glfwWindowShouldClose(window)) {
         processInput(window);

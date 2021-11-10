@@ -156,27 +156,33 @@ void main() {
     vec3 old_x = normalize(cross(cam.dir, vec3(0, 0, 1))); // единичный вектор Ox для экрана в пространстве (x в старом базисе)
     vec3 old_z = cam_dir; // единичный вектор Oz для экрана в пространстве (z в старом базисе)
     vec3 old_y = normalize(cross(old_x, old_z)); // единичный вектор Oy для экрана в пространстве (y в старом базисе)
-    vec3 old_O = cam.pos; // центр координат старого СК в новом базисе
-    vec3 old_point = vec3(coords, 0); // положение точки в прострастве, через которую пройдёт луч, в старом базисе
+    vec3 old_O = cam.pos; // центр кооринат старого СК в новом базисе
+
+    float cam_dist = tan(cam.viewing_angle) * cam.resolution.x / 2; // расстояние от наблюдателя до экрана
+    vec3 old_point = vec3(coords, cam_dist); // положение точки в прострастве, через которую пройдёт луч, в старом базисе
 
     // точка в прострастве, через которую пройдёт луч
     vec3 point =  old_x * old_point.xxx + old_y * old_point.yyy + old_z * old_point.zzz + old_O;
 
-    float cam_dist = tan(cam.viewing_angle) * cam.resolution.x; // расстояние от наблюдателя до экрана
+    
 
     vec3 end = normalize(point - beg) * cam.render_distance + beg; // конец трассируемого отрезка с учётом дальности прорисовки
 
     // номер вершины в которую попал луч (или -1) и точка в которую попал луч (или конец отрезка)
-
+    vec3 raydir = normalize(point - beg);
     
-    FragColor = vec4(0, 0, 0, 1);
-    if (belongs(vec3(-6, -6, -6), vec3(6, 6, 6), end)) {
-        FragColor = vec4(end, 1);
+    FragColor = vec4(1, 0, 0, 1);
+    if (belongs(vec3(0,0,0), vec3(6,6,6),  end)) {
+        FragColor = vec4(0, 1, 0, 1);
     }
-    //Raycasting_response ans = raylaunching(beg, end);
-//    if (ans.node_num != -1) {
-//       FragColor = vec4(tree[ans.node_num].color_refl.xyz, 1.0);
-//    } else {
-//       FragColor = vec4(0, 0, 0, 1.0);
-//    }
+    
+
+    //FragColor = vec4(abs(raydir), 1);
+
+    Raycasting_response ans = raylaunching(beg, end);
+    if (ans.node_num != -1) {
+       FragColor = vec4(tree[ans.node_num].color_refl.xyz, 1.0);
+    } else {
+       FragColor = vec4(0, 0, 0, 1.0);
+    }
 }

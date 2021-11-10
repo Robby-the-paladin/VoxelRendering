@@ -22,6 +22,7 @@ public:
     void setInt(const std::string& name, int value) const;
     void setFloat(const std::string& name, float value) const;
     void set3f(const std::string& name, float val1, float val2, float val3);
+    void set2f(const std::string& name, float val1, float val2);
 
 private:
     // utility function for checking shader compilation/linking errors.

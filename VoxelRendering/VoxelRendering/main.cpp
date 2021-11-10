@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+#define M_PI 3.1415926535897932384626433832795
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
@@ -24,7 +26,7 @@ void init(Shader* shader) {
             mat[i][j].resize(8);
             for (int k = 0; k < 8; k++) {
                 mat[i][j][k].color = Color(200, 150, 0, 255);
-                mat[i][j][k].empty = false;
+                mat[i][j][k].empty = true;
                 mat[i][j][k].reflection_k = 0;
             }
         }
@@ -36,8 +38,14 @@ int r = 0;
 
 void step(Shader* shader) {
     r = (r + 1) % 256;
-    tree.set(Vec3(0, 0, 0), Vec3(8, 8, 8), Voxel(Color(r, 0, 0, 1), 1, 0));
+    tree.set(Vec3(4, 4, 4), Vec3(5, 5, 5), Voxel(Color(r, 0, 0, 1), 1, 0));
     tree.shader_serializing(shader, Vec3(0, 0, 0), Vec3(7, 7, 7));
+
+    shader->set2f("cam.resolution", SCR_WIDTH, SCR_HEIGHT);
+    shader->set3f("cam.pos", 0, 0, 0);
+    shader->set3f("cam.dir", 1, 1, 1);
+    shader->setFloat("cam.render_distance", 6);
+    shader->setFloat("cam.viewing_angle", M_PI / 4.0);
 }
 
 int main()
@@ -45,6 +53,7 @@ int main()
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);

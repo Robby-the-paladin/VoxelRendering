@@ -85,10 +85,14 @@ struct Raycasting_response {
     vec3 point;
 };
 
-Raycasting_request raycasting_requests[100];
+Raycasting_request raycasting_requests[10];
 int top_num = -1;
 
 Raycasting_response raycasting(vec3 beg, vec3 end, int node_num, vec3 l, vec3 r) {
+    if (!belongs(l, r, beg) || !belongs(l, r, end)) {
+        FragColor = vec4(0, 1, 0, 1);
+        return Raycasting_response(-1, end);
+    }
     if (tree[node_num].terminal_empty_align2[0] != 0) {
         if (tree[node_num].terminal_empty_align2[1] != 0) { // если пустая вершина возращать -1 в node_num
             return Raycasting_response(-1, end);
@@ -147,7 +151,7 @@ void main() {
     vec3 beg = cam.pos; // позиция камеры
 
     // конец трассируемого отрезка
-    vec2 coords = gl_FragCoord.xy - (vec2(0.5, 0.5) * cam.resolution); // положение пикселя на экране (центр экрана (0, 0))
+    vec2 coords = gl_FragCoord.xy - vec2(0.5, 0.5) * cam.resolution; // положение пикселя на экране (центр экрана (0, 0))
 
     vec3 old_x = normalize(cross(cam.dir, vec3(0, 0, 1))); // единичный вектор Ox для экрана в пространстве (x в старом базисе)
     vec3 old_z = cam_dir; // единичный вектор Oz для экрана в пространстве (z в старом базисе)
@@ -166,10 +170,16 @@ void main() {
     vec3 end = normalize(point - beg) * cam.render_distance + beg; // конец трассируемого отрезка с учётом дальности прорисовки
 
     // номер вершины в которую попал луч (или -1) и точка в которую попал луч (или конец отрезка)
-    Raycasting_response ans = raylaunching(beg, end);
-    if (ans.node_num != -1) {
-       FragColor = vec4(tree[ans.node_num].color_refl.xyz, 1.0);
-    } else {
-       FragColor = vec4(0, 1, 0, 1.0);
+
+    
+    FragColor = vec4(0, 0, 0, 1);
+    if (belongs(vec3(-6, -6, -6), vec3(6, 6, 6), end)) {
+        FragColor = vec4(end, 1);
     }
+    //Raycasting_response ans = raylaunching(beg, end);
+//    if (ans.node_num != -1) {
+//       FragColor = vec4(tree[ans.node_num].color_refl.xyz, 1.0);
+//    } else {
+//       FragColor = vec4(0, 0, 0, 1.0);
+//    }
 }

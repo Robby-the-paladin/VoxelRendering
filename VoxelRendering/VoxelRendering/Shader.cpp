@@ -40,6 +40,11 @@ void Shader::set3f(const std::string& name, float val1, float val2, float val3) 
     glUniform3f(glGetUniformLocation(ID, name.c_str()), val1, val2, val3);
 }
 
+void Shader::set2f(const std::string& name, float val1, float val2) {
+    glUniform2f(glGetUniformLocation(ID, name.c_str()), val1, val2);
+}
+
+
 void Shader::use() {
     glUseProgram(ID);
 }

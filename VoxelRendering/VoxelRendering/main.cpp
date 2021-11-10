@@ -38,13 +38,13 @@ int r = 0;
 
 void step(Shader* shader) {
     r = (r + 1) % 256;
-    tree.set(Vec3(4, 4, 4), Vec3(5, 5, 5), Voxel(Color(1, 0, 0, 1), 1, 0));
+    tree.set(Vec3(4, 4, 4), Vec3(5, 5, 5), Voxel(Color(r, 0, 0, 1), 1, 0));
     tree.shader_serializing(shader, Vec3(0, 0, 0), Vec3(7, 7, 7));
 
     shader->set2f("cam.resolution", SCR_WIDTH, SCR_HEIGHT);
     shader->set3f("cam.pos", 0, 0, 0);
     shader->set3f("cam.dir", 1, 1, 1);
-    shader->setFloat("cam.render_distance", 6);
+    shader->setFloat("cam.render_distance", 10);
     shader->setFloat("cam.viewing_angle", M_PI / 4.0);
 }
 

@@ -160,10 +160,7 @@ void main() {
     vec3 old_point = vec3(coords, 0); // положение точки в прострастве, через которую пройдёт луч, в старом базисе
 
     // точка в прострастве, через которую пройдёт луч
-    vec3 point = vec3(
-                    old_x.x * old_point.x + old_y.x * old_point.y + old_z.x * old_point.z + old_O.x,
-                    old_x.y * old_point.x + old_y.y * old_point.y + old_z.y * old_point.z + old_O.y,
-                    old_x.z * old_point.x + old_y.z * old_point.y + old_z.z * old_point.z + old_O.z);
+    vec3 point =  old_x * old_point.xxx + old_y * old_point.yyy + old_z * old_point.zzz + old_O;
 
     float cam_dist = tan(cam.viewing_angle) * cam.resolution.x; // расстояние от наблюдателя до экрана
 

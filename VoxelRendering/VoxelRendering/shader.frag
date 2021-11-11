@@ -96,6 +96,7 @@ Raycasting_response raycasting(vec3 beg, vec3 end, int node_num, vec3 l, vec3 r)
     }
     if (tree[node_num].terminal_empty_align2[0] != 0) {
         if (tree[node_num].terminal_empty_align2[1] != 0) { // если пустая вершина возращать -1 в node_num
+            FragColor = vec4(0.5, 0.5, 1, 0);
             return Raycasting_response(-1, end);
         }
         else { // иначе номер node_num и beg в point
@@ -159,15 +160,15 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
     top_num++;
     if (!belongs(treel, treer, beg)) {
          beg = cubic_selection(beg, end);
+         FragColor = vec4(1, 0.5, 1, 0);
          if (!belongs(treel, treer, beg)) {
-            FragColor = vec4(1, 1, 1, 0);
             return Raycasting_response(-1, end);
          }
     }
     if (!belongs(treel, treer, end)) {
          end = cubic_selection(end, beg);
+         FragColor = vec4(0, 0.5, 1, 0);
          if (!belongs(treel, treer, end)) {
-            FragColor = vec4(0, 0.5, 1, 0);
             return Raycasting_response(-1, end);
          }
     }
@@ -184,10 +185,12 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
 }
 
 bool grid(vec3 p) {
-    float eps = 0.000001; 
-    return (p.x - float(int(p.x + eps / 2)) < eps ||
-        p.y - float(int(p.y + eps / 2)) < eps ||
-        p.z - float(int(p.z + eps / 2)) < eps); 
+    float eps = 0.03;
+    int k = 0;
+    k += (p.x - floor(p.x + eps / 2) < eps) ? 1 : 0;
+    k += (p.y - floor(p.y + eps / 2) < eps) ? 1 : 0;
+    k += (p.z - floor(p.z + eps / 2) < eps) ? 1 : 0; 
+    return (k >= 2);
 }
 
 void main() {
@@ -223,12 +226,11 @@ void main() {
 //        FragColor = vec4(0, 1, 0, 1);
 //    }
     Raycasting_response ans = raylaunching(beg, end);
+    FragColor = vec4(0, 0, 0, 1.0);
     if (ans.node_num != -1) {
        FragColor = vec4(tree[ans.node_num].color_refl.xyz, 1.0);
-//       if (grid(ans.point)) {
-//            FragColor = vec4(1, 1, 1, 1.0);
-//       }
-    } else {
-       FragColor = vec4(0, 0, 0, 1.0);
+       if (grid(ans.point)) {
+            FragColor = vec4(1, 1, 1, 1.0);
+       }
     }
 }

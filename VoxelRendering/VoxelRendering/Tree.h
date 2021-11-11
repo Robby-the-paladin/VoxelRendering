@@ -9,7 +9,6 @@
 using namespace std;
 class Tree {
 private:
-	int max_size = 0;
 	Node* recursive_build(vector<vector<vector<Voxel>>>* mat, Vec3 coords0, Vec3 coords1);
 	void recursive_destroy(Node* node);
 	Voxel* recursive_get(Node* node, Vec3 l, Vec3 r, Vec3 coords);
@@ -17,6 +16,7 @@ private:
 	void push(Node* node);
 public:
 	Node root;
+	int max_size = 0;
 
 	Tree() {};
 

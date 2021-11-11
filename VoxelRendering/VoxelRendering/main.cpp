@@ -19,12 +19,12 @@ Tree tree;
 
 void init(Shader* shader) {
     vector<vector<vector<Voxel>>> mat;
-    mat.resize(8);
-    for (int i = 0; i < 8; i++) {
-        mat[i].resize(8);
-        for (int j = 0; j < 8; j++) {
-            mat[i][j].resize(8);
-            for (int k = 0; k < 8; k++) {
+    mat.resize(64);
+    for (int i = 0; i < 64; i++) {
+        mat[i].resize(64);
+        for (int j = 0; j < 64; j++) {
+            mat[i][j].resize(64);
+            for (int k = 0; k < 64; k++) {
                 mat[i][j][k].color = Color(200, 150, 0, 255);
                 mat[i][j][k].empty = true;
                 mat[i][j][k].reflection_k = 0;
@@ -36,16 +36,37 @@ void init(Shader* shader) {
 
 int r = 0;
 
-void step(Shader* shader) {
-    r = (r + 1) % 256;
-    tree.set(Vec3(4, 4, 4), Vec3(5, 5, 5), Voxel(Color(r, 0, 0, 1), 1, 0));
-    tree.shader_serializing(shader, Vec3(0, 0, 0), Vec3(7, 7, 7));
+void data_packing(Shader* shader,
+    float cam_res_x, float cam_res_y,
+    float cam_pos_x, float cam_pos_y, float cam_pos_z,
+    float cam_dir_x, float cam_dir_y, float cam_dir_z,
+    float cam_dist, float viewing_angle) {
 
-    shader->set2f("cam.resolution", SCR_WIDTH, SCR_HEIGHT);
-    shader->set3f("cam.pos", 0, 0, 0);
-    shader->set3f("cam.dir", 1, 1, 1);
-    shader->setFloat("cam.render_distance", 10);
-    shader->setFloat("cam.viewing_angle", M_PI / 4.0);
+    tree.shader_serializing(shader, Vec3(max(0, int(cam_pos_x - cam_dist)),
+        max(0, int(cam_pos_y - cam_dist)), max(0, int(cam_pos_z - cam_dist))),
+        Vec3(min(tree.max_size, int(cam_pos_x + cam_dist + 1)),
+            min(tree.max_size, int(cam_pos_y + cam_dist + 1)), min(tree.max_size, int(cam_pos_z + cam_dist + 1))));
+
+    shader->set2f("cam.resolution", cam_res_x, cam_res_y);
+    shader->set3f("cam.pos", cam_pos_x, cam_pos_y, cam_pos_z);
+    shader->set3f("cam.dir", cam_dir_x, cam_dir_y, cam_dir_z);
+    shader->setFloat("cam.render_distance", cam_dist);
+    shader->setFloat("cam.viewing_angle", viewing_angle);
+
+}
+
+void step(Shader* shader) {
+    r += 1;
+    tree.set(Vec3(4, (r % 10000) / 700, 0), Vec3(5, 5, 5), Voxel(Color(255, 0, 0, 1), 1, 0));
+
+    data_packing(shader,        // shader pointer
+        SCR_WIDTH, SCR_HEIGHT,  // camera resolution
+        0, 0, 0,                // camera position
+        1, 1, 1,                // camera direction
+        20,    // render distance
+        M_PI / 4.0);            // viewing angle
+
+    //cout << (r % 10000) / 700.0 << endl;
 }
 
 int main()

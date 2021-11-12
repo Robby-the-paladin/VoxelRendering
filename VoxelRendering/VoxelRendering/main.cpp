@@ -3,17 +3,36 @@
 
 #include "Shader.h"
 #include "Tree.h"
+#include <sys/timeb.h>
+#include <math.h>
 
 #include <iostream>
 
 #define M_PI 3.1415926535897932384626433832795
 
+int get_milli_count() {
+    timeb tb;
+    ftime(&tb);
+    int nCount = tb.millitm + (tb.time & 0xfffff) * 1000;
+    return nCount;
+}
+
+// Function for conversion
+double degree_to_rad(double degree) {
+    return (degree * (M_PI / 180));
+}
+
+GLFWwindow* window;
+float last_time;
+float cam_dir[3];
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+int SCR_WIDTH = 800;
+int SCR_HEIGHT = 600;
+double yaw = 0, pitch = 0;
 
 Tree tree;
 
@@ -32,9 +51,41 @@ void init(Shader* shader) {
         }
     }
     tree.build(mat);
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    last_time = get_milli_count();
+
+    cam_dir[0] = 1;
+    cam_dir[1] = 1;
+    cam_dir[2] = 1;
 }
 
-int r = 0;
+void mouse_callback()
+{
+    double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+
+    GLfloat yoffset = -(xpos - SCR_WIDTH / 2.0);
+    GLfloat xoffset = SCR_HEIGHT / 2.0 - ypos;
+
+    GLfloat sensitivity = 0.01;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    yaw += xoffset;
+    pitch += yoffset;
+
+    if (pitch > 89.0f)
+        pitch = 89.0f;
+    if (pitch < -89.0f)
+        pitch = -89.0f;
+
+    cam_dir[0] = cos(degree_to_rad(yaw)) * cos(degree_to_rad(pitch));
+    cam_dir[1] = sin(degree_to_rad(pitch));
+    cam_dir[2] = sin(degree_to_rad(yaw)) * cos(degree_to_rad(pitch));
+
+    glfwSetCursorPos(window, SCR_WIDTH / 2, SCR_HEIGHT / 2);
+}
 
 void data_packing(Shader* shader,
     float cam_res_x, float cam_res_y,
@@ -56,17 +107,17 @@ void data_packing(Shader* shader,
 }
 
 void step(Shader* shader) {
-    r += 1;
-    tree.set(Vec3(4, (r % 10000) / 700, 0), Vec3(5, 5, 5), Voxel(Color(255, 0, 0, 1), 1, 0));
+    tree.set(Vec3(4, 4, 4), Vec3(5, 5, 5), Voxel(Color(255, 0, 0, 1), 1, 0));
 
-    data_packing(shader,        // shader pointer
-        SCR_WIDTH, SCR_HEIGHT,  // camera resolution
-        0, 0, 0,                // camera position
-        1, 1, 1,                // camera direction
-        20,    // render distance
-        M_PI / 4.0);            // viewing angle
+    data_packing(shader,                    // shader pointer
+        SCR_WIDTH, SCR_HEIGHT,              // camera resolution
+        0, 0, 0,                            // camera position
+        cam_dir[0], cam_dir[1], cam_dir[2], // camera direction
+        20,                                 // render distance
+        M_PI / 4.0);                        // viewing angle
 
-    //cout << (r % 10000) / 700.0 << endl;
+    glfwGetWindowSize(window, &SCR_WIDTH, &SCR_HEIGHT);
+    mouse_callback();
 }
 
 int main()
@@ -85,7 +136,7 @@ int main()
 
     // glfw window creation
     // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;

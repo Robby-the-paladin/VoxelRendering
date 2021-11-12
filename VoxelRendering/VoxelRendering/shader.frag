@@ -120,7 +120,13 @@ Raycasting_response raycasting(vec3 beg, vec3 end, int node_num, vec3 l, vec3 r)
                         vec3 add = vec3(i * (r.x - l.x) / 2, j * (r.y - l.y) / 2, k * (r.z - l.z) / 2);
 					    vec3 newl = l + add;
 					    vec3 newr = ((r + l) / 2) + add;
-                        if (belongs(newl, newr, p[t]) && belongs(newl, newr, p[t - 1])) {
+                        vec3 p1 = p[t];
+                        vec3 p2 = p[t - 1];
+                        vec3 mp = (p1 + p2) / 2;
+                        float eps = 0.0001;
+                        p1 += normalize(mp - p1) * eps;
+                        p2 += normalize(mp - p2) * eps;
+                        if (belongs(newl, newr, p1) && belongs(newl, newr, p2)) {
                             top_num++;
                             raycasting_requests[top_num] = Raycasting_request(p[t - 1], p[t], new_num, newl, newr);
                         }

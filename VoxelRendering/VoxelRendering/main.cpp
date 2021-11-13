@@ -5,6 +5,7 @@
 #include "Tree.h"
 #include <sys/timeb.h>
 #include <math.h>
+#include <glm.hpp>
 
 #include <iostream>
 
@@ -23,8 +24,10 @@ double degree_to_rad(double degree) {
 }
 
 GLFWwindow* window;
+bool keys[1024];
 float last_time;
-float cam_dir[3];
+glm::vec3 cam_dir;
+glm::vec3 cam_pos;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
@@ -35,6 +38,13 @@ int SCR_HEIGHT = 600;
 double yaw = 0, pitch = 0;
 
 Tree tree;
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode) {
+    if (action == GLFW_PRESS)
+        keys[key] = true;
+    else if (action == GLFW_RELEASE)
+        keys[key] = false;
+}
 
 void init(Shader* shader) {
     vector<vector<vector<Voxel>>> mat;
@@ -53,6 +63,7 @@ void init(Shader* shader) {
     tree.build(mat);
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+    glfwSetKeyCallback(window, key_callback);
     last_time = get_milli_count();
 
     cam_dir[0] = 1;
@@ -65,10 +76,11 @@ void mouse_callback()
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
 
-    GLfloat yoffset = -(xpos - SCR_WIDTH / 2.0);
-    GLfloat xoffset = SCR_HEIGHT / 2.0 - ypos;
+    GLfloat xoffset = xpos - SCR_WIDTH / 2.0;
+    GLfloat yoffset = SCR_HEIGHT / 2.0 - ypos;
 
-    GLfloat sensitivity = 0.01;
+
+    GLfloat sensitivity = 0.05;
     xoffset *= sensitivity;
     yoffset *= sensitivity;
 
@@ -80,11 +92,36 @@ void mouse_callback()
     if (pitch < -89.0f)
         pitch = -89.0f;
 
-    cam_dir[0] = cos(degree_to_rad(yaw)) * cos(degree_to_rad(pitch));
-    cam_dir[1] = sin(degree_to_rad(pitch));
-    cam_dir[2] = sin(degree_to_rad(yaw)) * cos(degree_to_rad(pitch));
+    glm::vec3 front;
+    front.y = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.z = sin(glm::radians(pitch));
+    front.x = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    cam_dir = glm::normalize(front);
 
     glfwSetCursorPos(window, SCR_WIDTH / 2, SCR_HEIGHT / 2);
+}
+
+void do_movement() {
+    GLfloat cameraSpeed = 0.02f;
+    glm::vec3 up = glm::vec3(0.0f, 0.0f, 1.0f);
+    glm::vec3 camera_right = glm::normalize(glm::cross(up, cam_dir));
+    glm::vec3 camera_up = glm::cross(cam_dir, camera_right);
+
+    glm::vec3 move_dir = glm::vec3(0.0f, 0.0f, 0.0f);
+    if (keys[GLFW_KEY_W])
+        move_dir += cam_dir;
+    if (keys[GLFW_KEY_S])
+        move_dir -= cam_dir;
+    if (keys[GLFW_KEY_A])
+        move_dir -= glm::normalize(glm::cross(cam_dir, camera_up));
+    if (keys[GLFW_KEY_D])
+        move_dir += glm::normalize(glm::cross(cam_dir, camera_up));
+    if (keys[GLFW_KEY_SPACE])
+        move_dir += up;
+    if (keys[GLFW_KEY_LEFT_CONTROL])
+        move_dir -= up;
+    if (glm::dot(glm::abs(move_dir), glm::vec3(1, 1, 1)) > 0.0001)
+        cam_pos += cameraSpeed * glm::normalize(move_dir);
 }
 
 void data_packing(Shader* shader,
@@ -111,13 +148,14 @@ void step(Shader* shader) {
 
     data_packing(shader,                    // shader pointer
         SCR_WIDTH, SCR_HEIGHT,              // camera resolution
-        0, 0, 0,                            // camera position
-        cam_dir[0], cam_dir[1], cam_dir[2], // camera direction
+        cam_pos.x, cam_pos.y, cam_pos.z,    // camera position
+        cam_dir.x, cam_dir.y, cam_dir.z,    // camera direction
         20,                                 // render distance
-        M_PI / 4.0);                        // viewing angle
+        M_PI / 2.0);                        // viewing angle
 
     glfwGetWindowSize(window, &SCR_WIDTH, &SCR_HEIGHT);
     mouse_callback();
+    do_movement();
 }
 
 int main()

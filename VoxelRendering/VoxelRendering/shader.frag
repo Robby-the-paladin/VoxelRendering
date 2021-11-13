@@ -1,4 +1,5 @@
 #version 430 core
+#define M_PI 3.1415926535897932384626433832795
 out vec4 FragColor;
 
 in vec4 gl_FragCoord; // координаты фрагмента
@@ -212,7 +213,7 @@ void main() {
     vec3 old_y = normalize(cross(old_x, old_z)); // единичный вектор Oy для экрана в пространстве (y в старом базисе)
     vec3 old_O = cam.pos; // центр кооринат старого СК в новом базисе
 
-    float cam_dist = tan(cam.viewing_angle) * cam.resolution.x / 2; // расстояние от наблюдателя до экрана
+    float cam_dist = tan((M_PI  - cam.viewing_angle) / 2.0) * cam.resolution.x / 2; // расстояние от наблюдателя до экрана
     vec3 old_point = vec3(coords, cam_dist); // положение точки в прострастве, через которую пройдёт луч, в старом базисе
 
     // точка в прострастве, через которую пройдёт луч

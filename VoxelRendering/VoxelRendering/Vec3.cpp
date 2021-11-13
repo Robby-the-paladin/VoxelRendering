@@ -11,7 +11,7 @@ bool Vec3::belongs(Vec3 l, Vec3 r) {
 	Vec3 new_r = Vec3(std::max(l.x, r.x), std::max(l.y, r.y), std::max(l.z, r.z));
 	l = new_l;
 	r = new_r;
-	return !(!(*this >= l) || !(*this < r));
+	return (*this >= l) && (*this < r);
 }
 
 Vec3 operator+(const Vec3& vec1, const Vec3& vec2) {

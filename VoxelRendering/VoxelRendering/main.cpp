@@ -6,6 +6,7 @@
 #include <sys/timeb.h>
 #include <math.h>
 #include <glm.hpp>
+#include <queue>
 
 #include <iostream>
 
@@ -25,6 +26,7 @@ double degree_to_rad(double degree) {
 
 GLFWwindow* window;
 bool keys[1024];
+queue<float> fps;
 float last_time;
 glm::vec3 cam_dir;
 glm::vec3 cam_pos;
@@ -120,6 +122,11 @@ void do_movement() {
         move_dir += up;
     if (keys[GLFW_KEY_LEFT_CONTROL])
         move_dir -= up;
+    if (keys[GLFW_KEY_LEFT_SHIFT]) {
+        cameraSpeed = 0.04f;
+    } else {
+        cameraSpeed = 0.02f;
+    }
     if (glm::dot(glm::abs(move_dir), glm::vec3(1, 1, 1)) > 0.0001)
         cam_pos += cameraSpeed * glm::normalize(move_dir);
 }
@@ -144,7 +151,8 @@ void data_packing(Shader* shader,
 }
 
 void step(Shader* shader) {
-    tree.set(Vec3(4, 4, 4), Vec3(5, 5, 5), Voxel(Color(255, 0, 0, 1), 1, 0));
+    tree.set(Vec3(0, 0, 0), Vec3(4, 4, 4), Voxel(Color(255, 0, 0, 1), 1, 0));
+    tree.set(Vec3(3, 3, 3), Vec3(4, 4, 4), Voxel(Color(255, 0, 0, 1), 1, 1));
 
     data_packing(shader,                    // shader pointer
         SCR_WIDTH, SCR_HEIGHT,              // camera resolution
@@ -156,6 +164,11 @@ void step(Shader* shader) {
     glfwGetWindowSize(window, &SCR_WIDTH, &SCR_HEIGHT);
     mouse_callback();
     do_movement();
+    fps.push(get_milli_count());
+    while (get_milli_count() - fps.front() > 1000) {
+        fps.pop();
+    }
+    cout << "fps: " << fps.size() << endl;
 }
 
 int main()

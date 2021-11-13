@@ -31,7 +31,7 @@ uniform vec3 treel;
 uniform Camera cam;
 
 bool belongs(vec3 l, vec3 r, vec3 point) {
-    float eps = 0.0000001;
+    float eps = 0.0001;
     vec3 new_l = vec3(min(l.x, r.x), min(l.y, r.y), min(l.z, r.z));
     vec3 new_r = vec3(max(l.x, r.x), max(l.y, r.y), max(l.z, r.z));
     l = new_l;
@@ -42,12 +42,15 @@ bool belongs(vec3 l, vec3 r, vec3 point) {
 
 vec3[3] line_plane_intersections(vec3 beg, vec3 end, float x, float y, float z) {
     vec3 p = end - beg;
+    if (abs(p.x) < 0.000001 || abs(p.x) < 0.000001 || abs(p.x) < 0.000001) {
+        FragColor = vec4(0, 0, 1, 1);
+    }
     float ansxfory = (y - beg.y) * p.x / p.y + beg.x;
-    float ansxforz = (z - beg.z) * p.x / p.z + beg.x;
-    float ansyforx = (x - beg.x) * p.y / p.x + beg.y; 
-    float ansyforz = (z - beg.z) * p.y / p.z + beg.y;
-    float anszforx = (x - beg.x) * p.z / p.x + beg.z; 
     float anszfory = (y - beg.y) * p.z / p.y + beg.z;
+    float ansxforz = (z - beg.z) * p.x / p.z + beg.x;
+    float ansyforz = (z - beg.z) * p.y / p.z + beg.y;
+    float ansyforx = (x - beg.x) * p.y / p.x + beg.y;
+    float anszforx = (x - beg.x) * p.z / p.x + beg.z; 
     vec3 ansx = vec3(x, ansyforx, anszforx);
     vec3 ansy = vec3(ansxfory, y, anszfory);
     vec3 ansz = vec3(ansxforz, ansyforz, z);
@@ -64,8 +67,8 @@ vec3[5] sort(vec3[5] arr, vec3 sort_point, vec3 beg, vec3 end) {
     while (t) {
         t = false;
         for (int j = 0; j <= 3 - i; j++) {
-            if ((belongs(beg, end, arr[j + 1]) && !belongs(beg, end, arr[j]))
-            || (distance(arr[j], sort_point) > distance(arr[j + 1], sort_point))) {
+            if (belongs(beg, end, arr[j + 1]) && 
+            (!belongs(beg, end, arr[j]) || (distance(arr[j], sort_point) > distance(arr[j + 1], sort_point)))) {
                 vec3 add = arr[j];
                 arr[j] = arr[j + 1];
                 arr[j + 1] = add;
@@ -90,18 +93,18 @@ struct Raycasting_response {
     vec3 point;
 };
 
-Raycasting_request raycasting_requests[17];
+const int MAX_STACK_SIZE = 16;
+Raycasting_request raycasting_requests[MAX_STACK_SIZE];
 int top_num = -1;
-int debug = 0;
 
 Raycasting_response raycasting(vec3 beg, vec3 end, int node_num, vec3 l, vec3 r) {
-    debug++;
     if (!belongs(l, r, beg) || !belongs(l, r, end)) {
+        FragColor = vec4(0, 1, 0, 0);
         return Raycasting_response(-1, end);
     }
     if (tree[node_num].terminal_empty_align2[0] != 0) {
         if (tree[node_num].terminal_empty_align2[1] != 0) { // если пустая вершина возращать -1 в node_num
-            FragColor = vec4(0.5, 0.5, 1, 0);
+            FragColor = vec4(0, 1, 0, 0);
             return Raycasting_response(-1, end);
         }
         else { // иначе номер node_num и beg в point
@@ -118,26 +121,44 @@ Raycasting_response raycasting(vec3 beg, vec3 end, int node_num, vec3 l, vec3 r)
     p = sort(p, beg, beg, end);
     for (int t = 4; t > 0; t--) {
         if (belongs(beg, end, p[t])) {
+            //FragColor += vec4(0.1, 0.1, 0.1, 1);
+            vec3 p1 = p[t];
+            vec3 p2 = p[t - 1];
+            vec3 mp = (p1 + p2) / 2;
+            float eps = 0.001;
+            p1 += normalize(mp - p1) * eps;
+            p2 += normalize(mp - p2) * eps;
+            int wer = 0;
             for (int i = 0; i < 2; i++) {
 		        for (int j = 0; j < 2; j++) {
 			        for (int k = 0; k < 2; k++) {
                         int new_num = tree[node_num].children[i * 4 + j * 2 + k];
-                        vec3 add = vec3(i * (r.x - l.x) / 2, j * (r.y - l.y) / 2, k * (r.z - l.z) / 2);
+                        vec3 add = vec3(i * (r.x - l.x) / 2.0, j * (r.y - l.y) / 2.0, k * (r.z - l.z) / 2.0);
 					    vec3 newl = l + add;
-					    vec3 newr = ((r + l) / 2) + add;
-                        vec3 p1 = p[t];
-                        vec3 p2 = p[t - 1];
-                        vec3 mp = (p1 + p2) / 2;
-                        float eps = 0.0001;
-                        p1 += normalize(mp - p1) * eps;
-                        p2 += normalize(mp - p2) * eps;
+					    vec3 newr = newl + ((r - l) / 2.0);
                         if (belongs(newl, newr, p1) && belongs(newl, newr, p2)) {
-                            top_num++;
-                            raycasting_requests[top_num] = Raycasting_request(p[t - 1], p[t], new_num, newl, newr);
+                            wer = 1;
+                            if ((tree[new_num].terminal_empty_align2[0] == 0) || (tree[new_num].terminal_empty_align2[1] == 0)) {
+                                FragColor += vec4(0.1, 0.1, 0.1, 1);
+                                top_num++;
+                                if (top_num >= MAX_STACK_SIZE) {
+                                    FragColor = vec4(1, 1, 1, 0);
+                                    top_num--;
+                                    return Raycasting_response(-1, end);
+                                } else {
+                                    raycasting_requests[top_num] = Raycasting_request(p2, p1, new_num, newl, newr);
+                                }
+                            }
                         }
 			        }
                 }
 		    }
+            if (wer == 0) {
+                FragColor = vec4(0, 0, 1, 1);
+                if (belongs(l, r, p1) && belongs(l, r, p2)) {
+                    FragColor = vec4(0, 1, 1, 1);
+                }
+            }
 	    }   
     }
     return Raycasting_response(-1, end);
@@ -171,14 +192,12 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
     top_num++;
     if (!belongs(treel, treer, beg)) {
          beg = cubic_selection(beg, end);
-         FragColor = vec4(0, 1, 0, 0);
          if (!belongs(treel, treer, beg)) {
             return Raycasting_response(-1, end);
          }
     }
     if (!belongs(treel, treer, end)) {
          end = cubic_selection(end, beg);
-         FragColor = vec4(0, 1, 0, 0);
          if (!belongs(treel, treer, end)) {
             return Raycasting_response(-1, end);
          }

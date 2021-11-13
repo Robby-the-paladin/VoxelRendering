@@ -178,7 +178,6 @@ void Tree::shader_serializing(Shader* shader, Vec3 beg, Vec3 end) {
 		k++;
 		buffer.push_back(node);
 	}
-
 	GLuint ssbo = 0;
 	Sh_node* s = buffer.data();
 	glGenBuffers(1, &ssbo);

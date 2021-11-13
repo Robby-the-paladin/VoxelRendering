@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 class Vec3 {
 public:
 	int x = 0;

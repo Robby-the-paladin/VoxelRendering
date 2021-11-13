@@ -7,6 +7,10 @@ Vec3::Vec3(int _x, int _y, int _z) {
 }
 
 bool Vec3::belongs(Vec3 l, Vec3 r) {
+	Vec3 new_l = Vec3(std::min(l.x, r.x), std::min(l.y, r.y), std::min(l.z, r.z));
+	Vec3 new_r = Vec3(std::max(l.x, r.x), std::max(l.y, r.y), std::max(l.z, r.z));
+	l = new_l;
+	r = new_r;
 	return !(!(*this >= l) || !(*this < r));
 }
 

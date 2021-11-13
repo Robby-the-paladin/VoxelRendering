@@ -32,6 +32,10 @@ uniform Camera cam;
 
 bool belongs(vec3 l, vec3 r, vec3 point) {
     float eps = 0.0000001;
+    vec3 new_l = vec3(min(l.x, r.x), min(l.y, r.y), min(l.z, r.z));
+    vec3 new_r = vec3(max(l.x, r.x), max(l.y, r.y), max(l.z, r.z));
+    l = new_l;
+    r = new_r;
     return (point.x + eps >= l.x && point.y + eps >= l.y && point.z + eps >= l.z) &&
     (point.x <= r.x + eps && point.y <= r.y + eps && point.z <= r.z + eps);
 }
@@ -86,7 +90,7 @@ struct Raycasting_response {
     vec3 point;
 };
 
-Raycasting_request raycasting_requests[10];
+Raycasting_request raycasting_requests[17];
 int top_num = -1;
 int debug = 0;
 
@@ -167,14 +171,14 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
     top_num++;
     if (!belongs(treel, treer, beg)) {
          beg = cubic_selection(beg, end);
-         FragColor = vec4(1, 0.5, 1, 0);
+         FragColor = vec4(0, 1, 0, 0);
          if (!belongs(treel, treer, beg)) {
             return Raycasting_response(-1, end);
          }
     }
     if (!belongs(treel, treer, end)) {
          end = cubic_selection(end, beg);
-         FragColor = vec4(0, 0.5, 1, 0);
+         FragColor = vec4(0, 1, 0, 0);
          if (!belongs(treel, treer, end)) {
             return Raycasting_response(-1, end);
          }
@@ -224,16 +228,13 @@ void main() {
     vec3 end = normalize(point - beg) * cam.render_distance + beg; // конец трассируемого отрезка с учётом дальности прорисовки
 
     // номер вершины в которую попал луч (или -1) и точка в которую попал луч (или конец отрезка)
-    vec3 raydir = normalize(point - beg);
-
-    FragColor = vec4(abs(raydir), 1);
 
 //    FragColor = vec4(1, 0, 0, 1);
 //    if (debug == 1) {
 //        FragColor = vec4(0, 1, 0, 1);
 //    }
-    Raycasting_response ans = raylaunching(beg, end);
     FragColor = vec4(0, 0, 0, 1.0);
+    Raycasting_response ans = raylaunching(beg, end);
     if (ans.node_num != -1) {
        FragColor = vec4(tree[ans.node_num].color_refl.xyz, 1.0);
        if (grid(ans.point)) {

@@ -94,67 +94,6 @@ struct Raycasting_response {
 };
 
 const int MAX_STACK_SIZE = 7;
-Raycasting_request raycasting_requests[MAX_STACK_SIZE];
-int top_num = -1;
-
-Raycasting_response raycasting(vec3 beg, vec3 end, int node_num, vec3 l, vec3 r) {
-    if (!belongs(l, r, beg) || !belongs(l, r, end)) {
-        FragColor = vec4(0, 1, 0, 0);
-        return Raycasting_response(-1, end);
-    }
-    if (tree[node_num].terminal_empty_align2[0] != 0) {
-        if (tree[node_num].terminal_empty_align2[1] != 0) { // если пустая вершина возращать -1 в node_num
-            FragColor = vec4(0, 1, 0, 0);
-            return Raycasting_response(-1, end);
-        }
-        else { // иначе номер node_num и beg в point
-            return Raycasting_response(node_num, beg);
-        }
-    }
-    vec3 ap[3] = line_plane_intersections(beg, end, int((l.x + r.x) / 2), int((l.y + r.y) / 2), int((l.z + r.z) / 2));
-    vec3 p[5];
-    for (int i = 0; i < 3; i++) {
-        p[i] = ap[i];
-    }
-    p[3] = beg;
-    p[4] = end;
-    p = sort(p, beg, beg, end);
-    for (int t = 4; t > 0; t--) {
-        if (belongs(beg, end, p[t])) {
-            //FragColor += vec4(0.1, 0.1, 0.1, 1);
-            vec3 p1 = p[t];
-            vec3 p2 = p[t - 1];
-            vec3 mp = (p1 + p2) / 2;
-            float eps = 0.001;
-            p1 += normalize(mp - p1) * eps;
-            p2 += normalize(mp - p2) * eps;
-            for (int i = 0; i < 2; i++) {
-		        for (int j = 0; j < 2; j++) {
-			        for (int k = 0; k < 2; k++) {
-                        int new_num = tree[node_num].children[i * 4 + j * 2 + k];
-                        vec3 add = vec3(i * (r.x - l.x) / 2.0, j * (r.y - l.y) / 2.0, k * (r.z - l.z) / 2.0);
-					    vec3 newl = l + add;
-					    vec3 newr = newl + ((r - l) / 2.0);
-                        if (belongs(newl, newr, p1) && belongs(newl, newr, p2)) {
-                            if ((tree[new_num].terminal_empty_align2[0] == 0) || (tree[new_num].terminal_empty_align2[1] == 0)) {
-                                //FragColor += vec4(0.1, 0.1, 0.1, 1);
-                                top_num++;
-                                if (top_num >= MAX_STACK_SIZE) {
-                                    FragColor = vec4(1, 1, 1, 0);
-                                    top_num--;
-                                    return Raycasting_response(-1, end);
-                                } else {
-                                    raycasting_requests[top_num] = Raycasting_request(p2, p1, new_num, newl, newr);
-                                }
-                            }
-                        }
-			        }
-                }
-		    }
-	    }   
-    }
-    return Raycasting_response(-1, end);
-}
 
 vec3 cubic_selection(vec3 beg, vec3 end) {
     vec3 new_beg = end + (end - beg);
@@ -181,6 +120,8 @@ vec3 cubic_selection(vec3 beg, vec3 end) {
 }
 
 Raycasting_response raylaunching(vec3 beg, vec3 end) {
+    Raycasting_request raycasting_requests[MAX_STACK_SIZE];
+    int top_num = -1;
     top_num++;
     if (!belongs(treel, treer, beg)) {
          beg = cubic_selection(beg, end);
@@ -198,10 +139,67 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
     while(top_num != -1) {
         Raycasting_request req = raycasting_requests[top_num];
         top_num--;
-        Raycasting_response ans = raycasting(req.beg, req.end, req.node_num, req.l, req.r);
-        if (ans.node_num != -1) {
-            return ans;
+        beg = req.beg;
+        end = req.end;
+        int node_num = req.node_num;
+        vec3 l = req.l;
+        vec3 r = req.r;
+        if (!belongs(l, r, beg) || !belongs(l, r, end)) {
+            FragColor = vec4(0, 1, 0, 0);
+            continue;
         }
+        if (tree[node_num].terminal_empty_align2[0] != 0) {
+            if (tree[node_num].terminal_empty_align2[1] != 0) { // если пустая вершина возращать -1 в node_num
+                FragColor = vec4(0, 1, 0, 0);
+                continue;
+            }
+            else { // иначе номер node_num и beg в point
+                return Raycasting_response(node_num, beg);
+            }
+        }
+        vec3 ap[3] = line_plane_intersections(beg, end, int((l.x + r.x) / 2), int((l.y + r.y) / 2), int((l.z + r.z) / 2));
+        vec3 p[5];
+        for (int i = 0; i < 3; i++) {
+            p[i] = ap[i];
+        }
+        p[3] = beg;
+        p[4] = end;
+        p = sort(p, beg, beg, end);
+        for (int t = 4; t > 0; t--) {
+            if (belongs(beg, end, p[t])) {
+                //FragColor += vec4(0.1, 0.1, 0.1, 1);
+                vec3 p1 = p[t];
+                vec3 p2 = p[t - 1];
+                vec3 mp = (p1 + p2) / 2;
+                float eps = 0.001;
+                p1 += normalize(mp - p1) * eps;
+                p2 += normalize(mp - p2) * eps;
+                for (int i = 0; i < 2; i++) {
+		            for (int j = 0; j < 2; j++) {
+			            for (int k = 0; k < 2; k++) {
+                            int new_num = tree[node_num].children[i * 4 + j * 2 + k];
+                            vec3 add = vec3(i * (r.x - l.x) / 2.0, j * (r.y - l.y) / 2.0, k * (r.z - l.z) / 2.0);
+					        vec3 newl = l + add;
+					        vec3 newr = newl + ((r - l) / 2.0);
+                            if (belongs(newl, newr, p1) && belongs(newl, newr, p2)) {
+                                if ((tree[new_num].terminal_empty_align2[0] == 0) || (tree[new_num].terminal_empty_align2[1] == 0)) {
+                                    //FragColor += vec4(0.1, 0.1, 0.1, 1);
+                                    top_num++;
+                                    if (top_num >= MAX_STACK_SIZE) {
+                                        FragColor = vec4(1, 1, 1, 0);
+                                        top_num--;
+                                        continue;
+                                    } else {
+                                        raycasting_requests[top_num] = Raycasting_request(p2, p1, new_num, newl, newr);
+                                    }
+                                }
+                            }
+			            }
+                    }
+		        }
+	        }   
+        }
+        continue;
     }
     return Raycasting_response(-1, end);
 }

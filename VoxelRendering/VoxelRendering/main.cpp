@@ -51,15 +51,19 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void init(Shader* shader) {
     vector<vector<vector<Voxel>>> mat;
-    mat.resize(4);
-    for (int i = 0; i < 4; i++) {
-        mat[i].resize(4);
-        for (int j = 0; j < 4; j++) {
-            mat[i][j].resize(4);
-            for (int k = 0; k < 4; k++) {
+    int _size = 32;
+
+    mat.resize(_size);
+    for (int i = 0; i < _size; i++) {
+        mat[i].resize(_size);
+        for (int j = 0; j < _size; j++) {
+            mat[i][j].resize(_size);
+            for (int k = 0; k < _size; k++) {
                 mat[i][j][k].color = Color(200, 150, 0, 255);
                 mat[i][j][k].empty = true;
                 mat[i][j][k].reflection_k = 0;
+                if (k < sin(i * 0.1) * 3 + sin(j * 0.23) * 3.5)
+                    mat[i][j][k].empty = false;
             }
         }
     }
@@ -152,8 +156,8 @@ void data_packing(Shader* shader,
 }
 
 void step(Shader* shader) {
-    tree.set(Vec3(0, 0, 0), Vec3(4, 4, 4), Voxel(Color(255, 0, 0, 1), 1, 0));
-    tree.set(Vec3(1, 1, 1), Vec3(3, 3, 4), Voxel(Color(255, 0, 0, 1), 1, 1));
+    //tree.set(Vec3(0, 0, 0), Vec3(4, 4, 4), Voxel(Color(255, 0, 0, 1), 1, 0));
+    //tree.set(Vec3(1, 1, 1), Vec3(3, 3, 4), Voxel(Color(255, 0, 0, 1), 1, 1));
 
     data_packing(shader,                    // shader pointer
         SCR_WIDTH, SCR_HEIGHT,              // camera resolution

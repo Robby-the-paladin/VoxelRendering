@@ -93,7 +93,7 @@ struct Raycasting_response {
     vec3 point;
 };
 
-const int MAX_STACK_SIZE = 16;
+const int MAX_STACK_SIZE = 10;
 Raycasting_request raycasting_requests[MAX_STACK_SIZE];
 int top_num = -1;
 
@@ -128,7 +128,6 @@ Raycasting_response raycasting(vec3 beg, vec3 end, int node_num, vec3 l, vec3 r)
             float eps = 0.001;
             p1 += normalize(mp - p1) * eps;
             p2 += normalize(mp - p2) * eps;
-            int wer = 0;
             for (int i = 0; i < 2; i++) {
 		        for (int j = 0; j < 2; j++) {
 			        for (int k = 0; k < 2; k++) {
@@ -137,9 +136,8 @@ Raycasting_response raycasting(vec3 beg, vec3 end, int node_num, vec3 l, vec3 r)
 					    vec3 newl = l + add;
 					    vec3 newr = newl + ((r - l) / 2.0);
                         if (belongs(newl, newr, p1) && belongs(newl, newr, p2)) {
-                            wer = 1;
                             if ((tree[new_num].terminal_empty_align2[0] == 0) || (tree[new_num].terminal_empty_align2[1] == 0)) {
-                                FragColor += vec4(0.1, 0.1, 0.1, 1);
+                                //FragColor += vec4(0.1, 0.1, 0.1, 1);
                                 top_num++;
                                 if (top_num >= MAX_STACK_SIZE) {
                                     FragColor = vec4(1, 1, 1, 0);
@@ -153,12 +151,6 @@ Raycasting_response raycasting(vec3 beg, vec3 end, int node_num, vec3 l, vec3 r)
 			        }
                 }
 		    }
-            if (wer == 0) {
-                FragColor = vec4(0, 0, 1, 1);
-                if (belongs(l, r, p1) && belongs(l, r, p2)) {
-                    FragColor = vec4(0, 1, 1, 1);
-                }
-            }
 	    }   
     }
     return Raycasting_response(-1, end);

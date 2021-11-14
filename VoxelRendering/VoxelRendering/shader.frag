@@ -93,7 +93,7 @@ struct Raycasting_response {
     vec3 point;
 };
 
-const int MAX_STACK_SIZE = 10;
+const int MAX_STACK_SIZE = 7;
 Raycasting_request raycasting_requests[MAX_STACK_SIZE];
 int top_num = -1;
 

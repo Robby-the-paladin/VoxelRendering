@@ -37,6 +37,7 @@ void processInput(GLFWwindow* window);
 // settings
 int SCR_WIDTH = 800;
 int SCR_HEIGHT = 600;
+float camera_speed = 0.02f;
 double yaw = 0, pitch = 0;
 
 Tree tree;
@@ -50,12 +51,12 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void init(Shader* shader) {
     vector<vector<vector<Voxel>>> mat;
-    mat.resize(64);
-    for (int i = 0; i < 64; i++) {
-        mat[i].resize(64);
-        for (int j = 0; j < 64; j++) {
-            mat[i][j].resize(64);
-            for (int k = 0; k < 64; k++) {
+    mat.resize(4);
+    for (int i = 0; i < 4; i++) {
+        mat[i].resize(4);
+        for (int j = 0; j < 4; j++) {
+            mat[i][j].resize(4);
+            for (int k = 0; k < 4; k++) {
                 mat[i][j][k].color = Color(200, 150, 0, 255);
                 mat[i][j][k].empty = true;
                 mat[i][j][k].reflection_k = 0;
@@ -104,7 +105,7 @@ void mouse_callback()
 }
 
 void do_movement() {
-    GLfloat cameraSpeed = 0.02f;
+    GLfloat cameraSpeed = camera_speed;
     glm::vec3 up = glm::vec3(0.0f, 0.0f, 1.0f);
     glm::vec3 camera_right = glm::normalize(glm::cross(up, cam_dir));
     glm::vec3 camera_up = glm::cross(cam_dir, camera_right);
@@ -123,9 +124,9 @@ void do_movement() {
     if (keys[GLFW_KEY_LEFT_CONTROL])
         move_dir -= up;
     if (keys[GLFW_KEY_LEFT_SHIFT]) {
-        cameraSpeed = 0.04f;
+        cameraSpeed = camera_speed * 2;
     } else {
-        cameraSpeed = 0.02f;
+        cameraSpeed = camera_speed;
     }
     if (glm::dot(glm::abs(move_dir), glm::vec3(1, 1, 1)) > 0.0001)
         cam_pos += cameraSpeed * glm::normalize(move_dir);
@@ -158,7 +159,7 @@ void step(Shader* shader) {
         SCR_WIDTH, SCR_HEIGHT,              // camera resolution
         cam_pos.x, cam_pos.y, cam_pos.z,    // camera position
         cam_dir.x, cam_dir.y, cam_dir.z,    // camera direction
-        20,                                 // render distance
+        10,                                 // render distance
         M_PI / 2.0);                        // viewing angle
 
     glfwGetWindowSize(window, &SCR_WIDTH, &SCR_HEIGHT);

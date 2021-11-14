@@ -87,7 +87,7 @@ void Tree::recursive_set(Node* node, Vec3 l, Vec3 r, Vec3 coords0, Vec3 coords1,
 		node->voxel = value;
 		return;
 	}
-	if (!coords0.belongs(l, r) && !coords1.belongs(l + Vec3(1, 1, 1), r)) {
+	if (!intersected(l, r, coords0, coords1)) {
 		return;
 	}
 	push(node);

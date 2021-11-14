@@ -151,8 +151,8 @@ void data_packing(Shader* shader,
 }
 
 void step(Shader* shader) {
-    tree.set(Vec3(0, 0, 0), Vec3(5, 5, 5), Voxel(Color(255, 0, 0, 1), 1, 0));
-    //tree.set(Vec3(3, 3, 3), Vec3(4, 4, 4), Voxel(Color(255, 0, 0, 1), 1, 1));
+    //tree.set(Vec3(0, 0, 0), Vec3(6, 6, 6), Voxel(Color(255, 0, 0, 1), 1, 0));
+    tree.set(Vec3(0, 0, 3), Vec3(3, 3, 4), Voxel(Color(255, 0, 0, 1), 1, 0));
 
     data_packing(shader,                    // shader pointer
         SCR_WIDTH, SCR_HEIGHT,              // camera resolution

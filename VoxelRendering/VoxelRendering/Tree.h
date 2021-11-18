@@ -22,6 +22,7 @@ private:
 		GLfloat color_refl[4];
 	};
 	vector<Sh_node> buffer;
+	GLuint ssbo = 0;
 
 	void update_buffer(Shader* shader);
 public:

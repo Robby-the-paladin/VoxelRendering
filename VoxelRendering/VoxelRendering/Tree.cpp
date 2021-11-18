@@ -41,6 +41,17 @@ void Tree::update_buffer(Shader* shader) {
 	}
 	serializing_time = aux::get_milli_count() - serializing_time;
 	cout << "stime: " << serializing_time << endl;
+	int buffer_setting_time = aux::get_milli_count();
+	Sh_node* s = buffer.data();
+	glGenBuffers(1, &ssbo);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sh_node) * buffer.size(), s, GL_DYNAMIC_COPY);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+	GLuint binding_point_index = 3;
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
+	buffer_setting_time = aux::get_milli_count() - buffer_setting_time;
+	//cout << "btime: " << buffer_setting_time << endl;
 }
 
 Node* Tree::recursive_build(vector<vector<vector<Voxel>>>* mat, Vec3 coords0, Vec3 coords1) {
@@ -157,16 +168,4 @@ void Tree::shader_serializing(Shader* shader) {
 	// Setting subroot coords
 	shader->set3f("treel", l.x, l.y, l.z);
 	shader->set3f("treer", r.x, r.y, r.z);
-	int buffer_setting_time = aux::get_milli_count();
-	GLuint ssbo = 0;
-	Sh_node* s = buffer.data();
-	glGenBuffers(1, &ssbo);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sh_node) * buffer.size(), s, GL_DYNAMIC_COPY);
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-	GLuint binding_point_index = 3;
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
-	buffer_setting_time = aux::get_milli_count() - buffer_setting_time;
-	//cout << "btime: " << buffer_setting_time << endl;
 }

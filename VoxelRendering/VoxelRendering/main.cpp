@@ -46,7 +46,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void init(Shader* shader) {
     vector<vector<vector<Voxel>>> mat;
-    int _size = 256;
+    int _size = 16;
 
     mat.resize(_size);
     for (int i = 0; i < _size; i++) {
@@ -165,7 +165,7 @@ void step(Shader* shader) {
     while (aux::get_milli_count() - fps.front() > 1000) {
         fps.pop();
     }
-    cout << "fps: " << fps.size() << endl;
+    //cout << "fps: " << fps.size() << endl;
 }
 
 int main()
@@ -275,7 +275,7 @@ int main()
         step_time = aux::get_milli_count();
         step(&ourShader);
         step_time = aux::get_milli_count() - step_time;
-        //cout << "stime: " << step_time << " rtime: " << render_time << endl;
+        cout << "stime: " << step_time << " rtime: " << render_time << endl;
         render_time = aux::get_milli_count();
 
         // draw triangle

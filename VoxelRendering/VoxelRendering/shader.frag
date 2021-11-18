@@ -93,7 +93,7 @@ struct Raycasting_response {
     vec3 point;
 };
 
-const int MAX_STACK_SIZE = 16;
+const int MAX_STACK_SIZE = 32;
 
 vec3 cubic_selection(vec3 beg, vec3 end) {
     vec3 new_beg = end + (end - beg);

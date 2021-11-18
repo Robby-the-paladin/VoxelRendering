@@ -31,7 +31,7 @@ void processInput(GLFWwindow* window);
 // settings
 int SCR_WIDTH = 800;
 int SCR_HEIGHT = 600;
-float render_distance = 128;
+float render_distance = 512;
 float camera_speed = 0.2f;
 double yaw = 0, pitch = 0;
 
@@ -46,7 +46,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void init(Shader* shader) {
     vector<vector<vector<Voxel>>> mat;
-    int _size = 16;
+    int _size = 256;
 
     mat.resize(_size);
     for (int i = 0; i < _size; i++) {
@@ -165,7 +165,7 @@ void step(Shader* shader) {
     while (aux::get_milli_count() - fps.front() > 1000) {
         fps.pop();
     }
-    //cout << "fps: " << fps.size() << endl;
+    //cout << "fps: " << fps.size() << " ";
 }
 
 int main()
@@ -271,6 +271,8 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         // GAME STEP
+        glFinish();
+        //glFlush();
         render_time = aux::get_milli_count() - render_time;
         step_time = aux::get_milli_count();
         step(&ourShader);

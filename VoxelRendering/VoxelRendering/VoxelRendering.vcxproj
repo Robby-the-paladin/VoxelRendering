@@ -146,6 +146,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\..\..\libraries\glad\src\glad.c" />
+    <ClCompile Include="AuxLib.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Node.cpp" />
@@ -156,6 +157,7 @@
     <ClCompile Include="Voxel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AuxLib.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="Serializer.h" />

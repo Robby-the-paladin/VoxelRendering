@@ -1,5 +1,48 @@
 ﻿#include "Tree.h"
 
+void Tree::update_buffer(Shader* shader) {
+	int serializing_time = aux::get_milli_count();
+	// Finding subroot (minimal root containing beg & end)
+	Vec3 l = Vec3(0, 0, 0), r = Vec3(max_size, max_size, max_size);
+	bool cycle = true;
+	Node* subroot = &root;
+	// Init bfs queue
+	queue<pair<Node*, pair<int, int>>> q;
+
+	// Serializing
+	q.push(make_pair(subroot, make_pair(-1, -1)));
+	int k = 0;
+	while (!q.empty()) {
+		Node* cur = q.front().first;
+		Sh_node node;
+		string curShNode = "tree[" + to_string(k) + "]";
+		node.terminal_empty_align2[0] = cur->terminal;
+		//shader->setBool(curShNode + ".terminal", cur->terminal);
+		if (cur->terminal) {
+			node.terminal_empty_align2[1] = cur->voxel.empty;
+			node.color_refl[0] = 1.0 * cur->voxel.color.r / 255.0;
+			node.color_refl[1] = 1.0 * cur->voxel.color.g / 255.0;
+			node.color_refl[2] = 1.0 * cur->voxel.color.b / 255.0;
+			node.color_refl[3] = cur->voxel.reflection_k;
+		}
+		else {
+			for (int i = 0; i < 8; i++) {
+				if (cur->children[i] != nullptr) {
+					q.push(make_pair(cur->children[i], make_pair(k, i)));
+				}
+			}
+		}
+		if (q.front().second.first != -1) {
+			buffer[q.front().second.first].children[q.front().second.second] = k;
+		}
+		q.pop();
+		k++;
+		buffer.push_back(node);
+	}
+	serializing_time = aux::get_milli_count() - serializing_time;
+	cout << "stime: " << serializing_time << endl;
+}
+
 Node* Tree::recursive_build(vector<vector<vector<Voxel>>>* mat, Vec3 coords0, Vec3 coords1) {
 	if (coords0 + Vec3(1, 1, 1) == coords1) {
 		if (mat->size() < coords1.x || mat->operator[](coords0.x).size() < coords1.y
@@ -23,10 +66,11 @@ Node* Tree::recursive_build(vector<vector<vector<Voxel>>>* mat, Vec3 coords0, Ve
 	return new Node(children);
 }
 
-void Tree::build(vector<vector<vector<Voxel>>> mat) {
+void Tree::build(vector<vector<vector<Voxel>>> mat, Shader* shader) {
 	max_size = max(max(mat.size(), mat[0].size()), mat[0][0].size());
 	max_size = (1 << int(log(max_size - 1) / log(2) + 1));
 	root = *recursive_build(&mat, Vec3(0, 0, 0), Vec3(max_size, max_size, max_size));
+	update_buffer(shader);
 }
 
 void Tree::recursive_destroy(Node* node) {
@@ -103,81 +147,17 @@ void Tree::recursive_set(Node* node, Vec3 l, Vec3 r, Vec3 coords0, Vec3 coords1,
 	}
 }
 
-void Tree::set(Vec3 coords0, Vec3 coords1, Voxel value) {
+void Tree::set(Vec3 coords0, Vec3 coords1, Voxel value, Shader* shader) {
 	recursive_set(&root, Vec3(0, 0, 0), Vec3(max_size, max_size, max_size), coords0, coords1, value);
+	update_buffer(shader);
 }
 
-struct Sh_node {
-	GLint children[8];
-	GLint terminal_empty_align2[4];
-	GLfloat color_refl[4];
-};
-
-void Tree::shader_serializing(Shader* shader, Vec3 beg, Vec3 end) {
-	// Finding subroot (minimal root containing beg & end)
+void Tree::shader_serializing(Shader* shader) {
 	Vec3 l = Vec3(0, 0, 0), r = Vec3(max_size, max_size, max_size);
-	bool cycle = true;
-	Node* subroot = &root;
-	while (cycle) {
-		cycle = false;
-		for (int i = 0; i < 2; i++) {
-			for (int j = 0; j < 2; j++) {
-				for (int k = 0; k < 2; k++) {
-					Vec3 add = Vec3(i * (r.x - l.x) / 2, j * (r.y - l.y) / 2, k * (r.z - l.z) / 2);
-					Vec3 newl = l + add;
-					Vec3 newr = ((r + l) / 2) + add;
-					if (beg.belongs(newl, newr) && end.belongs(newl, newr)){
-						subroot = subroot->children[i * 4 + j * 2 + k];
-						l = newl;
-						r = newr;
-						cycle = true;
-					}
-				}
-				if (cycle)
-					break;
-			}
-			if (cycle)
-				break;
-		}
-	}
-
 	// Setting subroot coords
 	shader->set3f("treel", l.x, l.y, l.z);
 	shader->set3f("treer", r.x, r.y, r.z);
-	// Init bfs queue
-	queue<pair<Node*, pair<int, int>>> q;
-
-	// Serializing
-	q.push(make_pair(subroot, make_pair(-1, -1)));
-	int k = 0;
-	vector<Sh_node> buffer;
-	while (!q.empty()) {
-		Node* cur = q.front().first;
-		Sh_node node;
-		string curShNode = "tree[" + to_string(k) + "]";
-		node.terminal_empty_align2[0] = cur->terminal;
-		//shader->setBool(curShNode + ".terminal", cur->terminal);
-		if (cur->terminal) {
-			node.terminal_empty_align2[1] = cur->voxel.empty;
-			node.color_refl[0] = 1.0 * cur->voxel.color.r / 255.0;
-			node.color_refl[1] = 1.0 * cur->voxel.color.g / 255.0;
-			node.color_refl[2] = 1.0 * cur->voxel.color.b / 255.0;
-			node.color_refl[3] = cur->voxel.reflection_k;
-		}
-		else {
-			for (int i = 0; i < 8; i++) {
-				if (cur->children[i] != nullptr) {
-					q.push(make_pair(cur->children[i], make_pair(k, i)));
-				}
-			}
-		}
-		if (q.front().second.first != -1) {
-			buffer[q.front().second.first].children[q.front().second.second] = k;
-		}
-		q.pop();
-		k++;
-		buffer.push_back(node);
-	}
+	int buffer_setting_time = aux::get_milli_count();
 	GLuint ssbo = 0;
 	Sh_node* s = buffer.data();
 	glGenBuffers(1, &ssbo);
@@ -187,4 +167,6 @@ void Tree::shader_serializing(Shader* shader, Vec3 beg, Vec3 end) {
 
 	GLuint binding_point_index = 3;
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
+	buffer_setting_time = aux::get_milli_count() - buffer_setting_time;
+	//cout << "btime: " << buffer_setting_time << endl;
 }

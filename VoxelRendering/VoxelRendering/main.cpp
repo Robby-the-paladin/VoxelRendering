@@ -1,4 +1,4 @@
-#define DEBUG
+//#define DEBUG
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -14,7 +14,6 @@
 #include <iostream>
 
 #define M_PI 3.1415926535897932384626433832795
-
 
 // Function for conversion
 double degree_to_rad(double degree) {
@@ -60,7 +59,7 @@ void init(Shader* shader) {
                 mat[i][j][k].color = Color(0, 200, 0, 255);
                 mat[i][j][k].empty = true;
                 mat[i][j][k].reflection_k = 0;
-                if (k < sin(i * 0.1) * 3 + sin(j * 0.23) * 3.5)
+                if (k * 0.1 < sin(i * 0.1) * 3 + sin(j * 0.23) * 3.5)
                     mat[i][j][k].empty = false;
             }
         }

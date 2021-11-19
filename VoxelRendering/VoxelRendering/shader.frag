@@ -1,5 +1,6 @@
 #version 430 core
 #define M_PI 3.1415926535897932384626433832795
+#define COLOR_SATURATION 0.0
 out vec4 FragColor;
 
 in vec4 gl_FragCoord; // координаты фрагмента
@@ -120,6 +121,8 @@ vec3 cubic_selection(vec3 beg, vec3 end) {
 }
 
 Raycasting_response raylaunching(vec3 beg, vec3 end) {
+    vec3 trve_end = end;
+
     Raycasting_request raycasting_requests[MAX_STACK_SIZE];
     int top_num = -1;
     top_num++;
@@ -201,7 +204,7 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
         }
         continue;
     }
-    return Raycasting_response(-1, end);
+    return Raycasting_response(-1, trve_end);
 }
 
 bool grid(vec3 p) {
@@ -211,6 +214,22 @@ bool grid(vec3 p) {
     k += (p.y - floor(p.y + eps / 2) < eps) ? 1 : 0;
     k += (p.z - floor(p.z + eps / 2) < eps) ? 1 : 0; 
     return (k >= 2);
+}
+
+// Cubic saturation; x from 0 to 1
+float saturate(float x) {
+    float t = 2.*x-1.;
+    return (3.*t-t*t*t)/4. + 0.5;
+}
+
+// Post-processing func (color saturation)
+vec3 post_proc(vec3 col) {
+    return col * (1. - COLOR_SATURATION) + 
+        vec3(
+            saturate(col.x),
+            saturate(col.y),
+            saturate(col.z)
+        ) * COLOR_SATURATION;
 }
 
 void main() {
@@ -244,10 +263,21 @@ void main() {
 //    }
     FragColor = vec4(0, 0, 0, 1.0);
     Raycasting_response ans = raylaunching(beg, end);
+
+    // Fog
+    float fog_k = 10. / distance(cam.pos, ans.point);
+    fog_k = max(0., min(1., fog_k));
+    vec4 fog_color = vec4(vec3(0., 1., 1.) * 0.7, 1.);
+    
     if (ans.node_num != -1) {
        FragColor = vec4(tree[ans.node_num].color_refl.xyz, 1.0);
        if (grid(ans.point)) {
             FragColor = vec4(1, 1, 1, 1.0);
        }
     }
+
+    FragColor = FragColor * (fog_k) + fog_color * (1 - fog_k);
+
+    // Saturation
+    FragColor = vec4(post_proc(FragColor.xyz), 1.);
 }

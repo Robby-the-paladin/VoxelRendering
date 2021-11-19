@@ -4,7 +4,6 @@
 #include "Node.h"
 #include "Vec3.h"
 #include "Shader.h"
-#include "AuxLib.h"
 #include <GLFW/glfw3.h>
 
 using namespace std;

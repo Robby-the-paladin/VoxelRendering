@@ -82,7 +82,7 @@
     <LibraryPath>C:\libraries\glfw\build\src\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
+    <LinkIncremental>true</LinkIncremental>
     <IncludePath>C:\libraries\glm;C:\libraries\glfw\include;C:\libraries\glad\include;C:\libraries\glad;$(IncludePath)</IncludePath>
     <LibraryPath>C:\libraries\glfw\build\src\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>

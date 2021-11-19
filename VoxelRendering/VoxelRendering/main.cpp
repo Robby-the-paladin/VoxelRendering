@@ -1,9 +1,12 @@
+#define DEBUG
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include "Shader.h"
 #include "Tree.h"
+#ifdef DEBUG
 #include "AuxLib.h"
+#endif // DEBUG
 #include <math.h>
 #include <glm.hpp>
 #include <queue>
@@ -11,7 +14,6 @@
 #include <iostream>
 
 #define M_PI 3.1415926535897932384626433832795
-//#define DEBUG
 
 
 // Function for conversion
@@ -32,7 +34,7 @@ void processInput(GLFWwindow* window);
 // settings
 int SCR_WIDTH = 800;
 int SCR_HEIGHT = 600;
-float render_distance = 16;
+float render_distance = 512;
 float camera_speed = 0.2f;
 double yaw = 0, pitch = 0;
 
@@ -47,7 +49,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void init(Shader* shader) {
     vector<vector<vector<Voxel>>> mat;
-    int _size = 16;
+    int _size = 256;
 
     mat.resize(_size);
     for (int i = 0; i < _size; i++) {
@@ -166,7 +168,7 @@ void step(Shader* shader) {
     while (aux::get_milli_count() - fps.front() > 1000) {
         fps.pop();
     }
-    //cout << "fps: " << fps.size() << " ";
+    cout << "fps: " << fps.size() << " ";
 #endif // DEBUG
 }
 

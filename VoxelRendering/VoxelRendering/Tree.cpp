@@ -1,7 +1,6 @@
 ﻿#include "Tree.h"
 
 void Tree::update_buffer(Shader* shader) {
-	int serializing_time = aux::get_milli_count();
 	// Finding subroot (minimal root containing beg & end)
 	Vec3 l = Vec3(0, 0, 0), r = Vec3(max_size, max_size, max_size);
 	bool cycle = true;
@@ -39,9 +38,6 @@ void Tree::update_buffer(Shader* shader) {
 		k++;
 		buffer.push_back(node);
 	}
-	serializing_time = aux::get_milli_count() - serializing_time;
-	cout << "stime: " << serializing_time << endl;
-	int buffer_setting_time = aux::get_milli_count();
 	Sh_node* s = buffer.data();
 	glGenBuffers(1, &ssbo);
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
@@ -50,8 +46,6 @@ void Tree::update_buffer(Shader* shader) {
 
 	GLuint binding_point_index = 3;
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
-	buffer_setting_time = aux::get_milli_count() - buffer_setting_time;
-	//cout << "btime: " << buffer_setting_time << endl;
 }
 
 Node* Tree::recursive_build(vector<vector<vector<Voxel>>>* mat, Vec3 coords0, Vec3 coords1) {

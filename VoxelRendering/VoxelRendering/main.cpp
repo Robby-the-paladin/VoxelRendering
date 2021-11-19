@@ -11,6 +11,7 @@
 #include <iostream>
 
 #define M_PI 3.1415926535897932384626433832795
+//#define DEBUG
 
 
 // Function for conversion
@@ -31,7 +32,7 @@ void processInput(GLFWwindow* window);
 // settings
 int SCR_WIDTH = 800;
 int SCR_HEIGHT = 600;
-float render_distance = 512;
+float render_distance = 16;
 float camera_speed = 0.2f;
 double yaw = 0, pitch = 0;
 
@@ -46,7 +47,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void init(Shader* shader) {
     vector<vector<vector<Voxel>>> mat;
-    int _size = 256;
+    int _size = 16;
 
     mat.resize(_size);
     for (int i = 0; i < _size; i++) {
@@ -66,7 +67,9 @@ void init(Shader* shader) {
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     glfwSetKeyCallback(window, key_callback);
+#ifdef DEBUG
     last_time = aux::get_milli_count();
+#endif // DEBUG
 
     cam_dir[0] = 1;
     cam_dir[1] = 1;
@@ -148,24 +151,23 @@ void data_packing(Shader* shader,
 }
 
 void step(Shader* shader) {
-    int data_packing_time = aux::get_milli_count();
     data_packing(shader,                    // shader pointer
         SCR_WIDTH, SCR_HEIGHT,              // camera resolution
         cam_pos.x, cam_pos.y, cam_pos.z,    // camera position
         cam_dir.x, cam_dir.y, cam_dir.z,    // camera direction
         render_distance,                                 // render distance
         M_PI / 2.0);                        // viewing angle
-    data_packing_time = aux::get_milli_count() - data_packing_time;
-    //cout << "dtime: " << data_packing_time << endl;
 
     glfwGetWindowSize(window, &SCR_WIDTH, &SCR_HEIGHT);
     mouse_callback();
     do_movement();
+#ifdef DEBUG
     fps.push(aux::get_milli_count());
     while (aux::get_milli_count() - fps.front() > 1000) {
         fps.pop();
     }
     //cout << "fps: " << fps.size() << " ";
+#endif // DEBUG
 }
 
 int main()
@@ -260,8 +262,10 @@ int main()
     glBindVertexArray(0);
 
     init(&ourShader);
+#ifdef DEBUG
     int step_time = aux::get_milli_count();
     int render_time = aux::get_milli_count();
+#endif // DEBUGG
     // render loop
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
@@ -271,14 +275,18 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         // GAME STEP
-        glFinish();
+        //glFinish();
         //glFlush();
+#ifdef DEBUG
         render_time = aux::get_milli_count() - render_time;
         step_time = aux::get_milli_count();
+#endif // DEBUG
         step(&ourShader);
+#ifdef DEBUG
         step_time = aux::get_milli_count() - step_time;
         cout << "stime: " << step_time << " rtime: " << render_time << endl;
         render_time = aux::get_milli_count();
+#endif // DEBUG
 
         // draw triangle
         ourShader.use();

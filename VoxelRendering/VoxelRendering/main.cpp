@@ -65,7 +65,7 @@ void init(Shader* shader) {
         }
     }
     tree.build(mat, shader);*/
-    tree.load_vox_file("example.vox", shader);
+    tree.load_vox_file("example.ex", shader);
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     glfwSetKeyCallback(window, key_callback);

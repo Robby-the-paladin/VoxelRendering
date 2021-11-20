@@ -267,7 +267,7 @@ void main() {
     // Fog
     float fog_k = 10. / distance(cam.pos, ans.point);
     fog_k = max(0., min(1., fog_k));
-    vec4 fog_color = vec4(vec3(0., 1., 1.) * 0.7, 1.);
+    vec4 fog_color = vec4(vec3(1., 1., 1.) * 0.7, 1.);
     
     if (ans.node_num != -1) {
        FragColor = vec4(tree[ans.node_num].color_refl.xyz, 1.0);
@@ -276,8 +276,8 @@ void main() {
        }
     }
 
-   // FragColor = FragColor * (fog_k) + fog_color * (1 - fog_k);
+    FragColor = FragColor * (fog_k) + fog_color * (1 - fog_k);
 
     // Saturation
-    //FragColor = vec4(post_proc(FragColor.xyz), 1.);
+    FragColor = vec4(post_proc(FragColor.xyz), 1.);
 }

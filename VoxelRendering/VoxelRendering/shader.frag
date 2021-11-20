@@ -16,6 +16,8 @@ const float LinearFogSize = 250;
 const float HyperbolicFogDistacnce = 10;
 const float HyperbolicFogPower = 1;
 const vec3 FogColor = vec3(0,0.5,0.6);
+// Sky light
+const vec3 LightDir = normalize(vec3(2,1,1));
 
 struct Node {
    int children[8]; // 4 * 8 = 32 byte
@@ -219,7 +221,7 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end) {
                                         top_num--;
                                         continue;
                                     } else {
-                                        raycasting_requests[top_num] = Raycasting_request(p2, p1, new_num, newl, newr);
+                                        raycasting_requests[top_num] = Raycasting_request(p[t-1], p[t], new_num, newl, newr);
                                     }
                                 }
                             }
@@ -293,19 +295,21 @@ void main() {
     if (ans.node_num != -1) {
        FragColor = vec4(tree[ans.node_num].color_refl.xyz, 1.0);
        if (grid(ans.point)) {
-            FragColor = vec4(1, 1, 1, 1.0);
+            //FragColor = vec4(1, 1, 1, 1.0);
        }
     }
-    FragColor = vec4(abs(ans.normal), 1);
+                                                                                                                                                                                     
+    // Light
+    FragColor *= max(0, dot(ans.normal, normalize(cam.pos - ans.point)));
 
     // Fog
-    /*float lin_fog_k = (cam.render_distance - LinearFogSize - distance(cam.pos, ans.point)) / LinearFogSize;
+    float lin_fog_k = (cam.render_distance - LinearFogSize - distance(cam.pos, ans.point)) / LinearFogSize;
     lin_fog_k = max(0., min(1., lin_fog_k)); // Clip between 0 and 1
     float hyp_fog_k = HyperbolicFogDistacnce / pow(distance(cam.pos, ans.point), HyperbolicFogPower);
     hyp_fog_k = max(0., min(1., hyp_fog_k)); // Clip between 0 and 1
     float fog_k = lin_fog_k * hyp_fog_k;
     FragColor = FragColor * (fog_k) + vec4(FogColor, 1) * (1 - fog_k); // Mix fog & color
-    */
+    
 
     // Saturation
     FragColor = vec4(post_proc(FragColor.xyz), 1.);

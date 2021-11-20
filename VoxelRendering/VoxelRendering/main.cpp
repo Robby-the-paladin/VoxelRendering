@@ -1,9 +1,12 @@
+//#define DEBUG
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include "Shader.h"
 #include "Tree.h"
-#include <sys/timeb.h>
+#ifdef DEBUG
+#include "AuxLib.h"
+#endif // DEBUG
 #include <math.h>
 #include <glm.hpp>
 #include <queue>
@@ -11,13 +14,6 @@
 #include <iostream>
 
 #define M_PI 3.1415926535897932384626433832795
-
-int get_milli_count() {
-    timeb tb;
-    ftime(&tb);
-    int nCount = tb.millitm + (tb.time & 0xfffff) * 1000;
-    return nCount;
-}
 
 // Function for conversion
 double degree_to_rad(double degree) {
@@ -37,7 +33,8 @@ void processInput(GLFWwindow* window);
 // settings
 int SCR_WIDTH = 800;
 int SCR_HEIGHT = 600;
-float camera_speed = 0.02f;
+float render_distance = 512;
+float camera_speed = 0.2f;
 double yaw = 0, pitch = 0;
 
 Tree tree;
@@ -51,23 +48,30 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void init(Shader* shader) {
     vector<vector<vector<Voxel>>> mat;
-    mat.resize(4);
-    for (int i = 0; i < 4; i++) {
-        mat[i].resize(4);
-        for (int j = 0; j < 4; j++) {
-            mat[i][j].resize(4);
-            for (int k = 0; k < 4; k++) {
-                mat[i][j][k].color = Color(200, 150, 0, 255);
+    int _size = 64;
+
+    /*mat.resize(_size);
+    for (int i = 0; i < _size; i++) {
+        mat[i].resize(_size);
+        for (int j = 0; j < _size; j++) {
+            mat[i][j].resize(_size);
+            for (int k = 0; k < _size; k++) {
+                mat[i][j][k].color = Color(0, 200, 0, 255);
                 mat[i][j][k].empty = true;
                 mat[i][j][k].reflection_k = 0;
+                if (k * 0.1 < sin(i * 0.1) * 3 + sin(j * 0.23) * 3.5)
+                    mat[i][j][k].empty = false;
             }
         }
     }
-    tree.build(mat);
+    tree.build(mat, shader);*/
+    tree.load_vox_file("example.ex", shader);
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     glfwSetKeyCallback(window, key_callback);
-    last_time = get_milli_count();
+#ifdef DEBUG
+    last_time = aux::get_milli_count();
+#endif // DEBUG
 
     cam_dir[0] = 1;
     cam_dir[1] = 1;
@@ -138,10 +142,7 @@ void data_packing(Shader* shader,
     float cam_dir_x, float cam_dir_y, float cam_dir_z,
     float cam_dist, float viewing_angle) {
 
-    tree.shader_serializing(shader, Vec3(max(0, int(cam_pos_x - cam_dist)),
-        max(0, int(cam_pos_y - cam_dist)), max(0, int(cam_pos_z - cam_dist))),
-        Vec3(min(tree.max_size, int(cam_pos_x + cam_dist + 1)),
-            min(tree.max_size, int(cam_pos_y + cam_dist + 1)), min(tree.max_size, int(cam_pos_z + cam_dist + 1))));
+    tree.shader_serializing(shader);
 
     shader->set2f("cam.resolution", cam_res_x, cam_res_y);
     shader->set3f("cam.pos", cam_pos_x, cam_pos_y, cam_pos_z);
@@ -152,24 +153,23 @@ void data_packing(Shader* shader,
 }
 
 void step(Shader* shader) {
-    tree.set(Vec3(0, 0, 0), Vec3(4, 4, 4), Voxel(Color(255, 0, 0, 1), 1, 0));
-    tree.set(Vec3(1, 1, 1), Vec3(3, 3, 4), Voxel(Color(255, 0, 0, 1), 1, 1));
-
     data_packing(shader,                    // shader pointer
         SCR_WIDTH, SCR_HEIGHT,              // camera resolution
         cam_pos.x, cam_pos.y, cam_pos.z,    // camera position
         cam_dir.x, cam_dir.y, cam_dir.z,    // camera direction
-        10,                                 // render distance
+        render_distance,                                 // render distance
         M_PI / 2.0);                        // viewing angle
 
     glfwGetWindowSize(window, &SCR_WIDTH, &SCR_HEIGHT);
     mouse_callback();
     do_movement();
-    fps.push(get_milli_count());
-    while (get_milli_count() - fps.front() > 1000) {
+#ifdef DEBUG
+    fps.push(aux::get_milli_count());
+    while (aux::get_milli_count() - fps.front() > 1000) {
         fps.pop();
     }
-    cout << "fps: " << fps.size() << endl;
+    cout << "fps: " << fps.size() << " ";
+#endif // DEBUG
 }
 
 int main()
@@ -264,6 +264,10 @@ int main()
     glBindVertexArray(0);
 
     init(&ourShader);
+#ifdef DEBUG
+    int step_time = aux::get_milli_count();
+    int render_time = aux::get_milli_count();
+#endif // DEBUGG
     // render loop
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
@@ -273,7 +277,18 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         // GAME STEP
+        //glFinish();
+        //glFlush();
+#ifdef DEBUG
+        render_time = aux::get_milli_count() - render_time;
+        step_time = aux::get_milli_count();
+#endif // DEBUG
         step(&ourShader);
+#ifdef DEBUG
+        step_time = aux::get_milli_count() - step_time;
+        cout << "stime: " << step_time << " rtime: " << render_time << endl;
+        render_time = aux::get_milli_count();
+#endif // DEBUG
 
         // draw triangle
         ourShader.use();

@@ -7,6 +7,16 @@ in vec4 gl_FragCoord; // координаты фрагмента
 
 in vec2 gl_PointCoord; // координаты точки на экране
 
+// TODO: replace following consts with uniforms
+const float ColorSaturation = 0.0;
+// Fog stats
+// Linear fog decresases lineary from start to cam render distance, is used to cut of not vivsible range
+const float LinearFogSize = 250;
+// Hyperbolic fog decreases as FogDistacnce / dist ^ FogPower, creates more beautiful result than linear one
+const float HyperbolicFogDistacnce = 10;
+const float HyperbolicFogPower = 1;
+const vec3 FogColor = vec3(0,0.5,0.6);
+
 struct Node {
    int children[8]; // 4 * 8 = 32 byte
    int terminal_empty_align2[4]; // 16 byte
@@ -264,10 +274,6 @@ void main() {
     FragColor = vec4(0, 0, 0, 1.0);
     Raycasting_response ans = raylaunching(beg, end);
 
-    // Fog
-    float fog_k = 10. / distance(cam.pos, ans.point);
-    fog_k = max(0., min(1., fog_k));
-    vec4 fog_color = vec4(vec3(0., 1., 1.) * 0.7, 1.);
     
     if (ans.node_num != -1) {
        FragColor = vec4(tree[ans.node_num].color_refl.xyz, 1.0);
@@ -276,7 +282,13 @@ void main() {
        }
     }
 
-    FragColor = FragColor * (fog_k) + fog_color * (1 - fog_k);
+    // Fog
+    float lin_fog_k = (cam.render_distance - LinearFogSize - distance(cam.pos, ans.point)) / LinearFogSize;
+    lin_fog_k = max(0., min(1., lin_fog_k)); // Clip between 0 and 1
+    float hyp_fog_k = HyperbolicFogDistacnce / pow(distance(cam.pos, ans.point), HyperbolicFogPower);
+    hyp_fog_k = max(0., min(1., hyp_fog_k)); // Clip between 0 and 1
+    float fog_k = lin_fog_k * hyp_fog_k;
+    FragColor = FragColor * (fog_k) + vec4(FogColor, 1) * (1 - fog_k); // Mix fog & color
 
     // Saturation
     FragColor = vec4(post_proc(FragColor.xyz), 1.);

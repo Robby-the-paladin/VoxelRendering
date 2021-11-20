@@ -5,6 +5,10 @@
 #include "Vec3.h"
 #include "Shader.h"
 #include <GLFW/glfw3.h>
+#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 using namespace std;
 class Tree {
@@ -30,6 +34,7 @@ public:
 
 	Tree() {};
 
+	void load_vox_file(string name, Shader* shader);
 	void build(vector<vector<vector<Voxel>>> mat, Shader* shader);
 	void destroy();
 	void set(Vec3 coords0, Vec3 coords1, Voxel value, Shader* shader);

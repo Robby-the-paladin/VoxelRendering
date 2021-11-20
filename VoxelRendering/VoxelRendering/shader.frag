@@ -276,8 +276,8 @@ void main() {
        }
     }
 
-    FragColor = FragColor * (fog_k) + fog_color * (1 - fog_k);
+   // FragColor = FragColor * (fog_k) + fog_color * (1 - fog_k);
 
     // Saturation
-    FragColor = vec4(post_proc(FragColor.xyz), 1.);
+    //FragColor = vec4(post_proc(FragColor.xyz), 1.);
 }

@@ -130,7 +130,23 @@ vec3 cubic_selection(vec3 beg, vec3 end) {
     return new_beg;
 }
 
-Raycasting_response raylaunching(vec3 beg, vec3 end) {
+struct Raylaunching_response {
+    int node_num;
+    vec3 point;
+    vec3 normal;
+};
+
+vec3 build_normal(vec3 point, vec3 l, vec3 r) {
+    vec3 center = (l + r) / 2;
+    vec3 normal = point - center;
+    vec3 normal_abs = abs(normal);
+    if (normal_abs.x < normal_abs.y || normal_abs.x < normal_abs.z) normal.x = 0;
+    if (normal_abs.y < normal_abs.x || normal_abs.y < normal_abs.z) normal.y = 0;
+    if (normal_abs.z < normal_abs.x || normal_abs.z < normal_abs.y) normal.z = 0;
+    return normalize(normal);
+}
+
+Raylaunching_response raylaunching(vec3 beg, vec3 end) {
     vec3 trve_end = end;
 
     Raycasting_request raycasting_requests[MAX_STACK_SIZE];
@@ -139,13 +155,13 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
     if (!belongs(treel, treer, beg)) {
          beg = cubic_selection(beg, end);
          if (!belongs(treel, treer, beg)) {
-            return Raycasting_response(-1, end);
+            return Raylaunching_response(-1, end, vec3(0,0,0));
          }
     }
     if (!belongs(treel, treer, end)) {
          end = cubic_selection(end, beg);
          if (!belongs(treel, treer, end)) {
-            return Raycasting_response(-1, end);
+            return Raylaunching_response(-1, end, vec3(0,0,0));
          }
     }
     raycasting_requests[top_num] = Raycasting_request(beg, end, 0, treel, treer);
@@ -167,7 +183,7 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
                 continue;
             }
             else { // иначе номер node_num и beg в point
-                return Raycasting_response(node_num, beg);
+                return Raylaunching_response(node_num, beg, build_normal(beg, l, r));
             }
         }
         vec3 ap[3] = line_plane_intersections(beg, end, int((l.x + r.x) / 2), int((l.y + r.y) / 2), int((l.z + r.z) / 2));
@@ -212,9 +228,8 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
 		        }
 	        }   
         }
-        continue;
     }
-    return Raycasting_response(-1, trve_end);
+    return Raylaunching_response(-1, trve_end, vec3(0,0,0));
 }
 
 bool grid(vec3 p) {
@@ -272,7 +287,7 @@ void main() {
 //        FragColor = vec4(0, 1, 0, 1);
 //    }
     FragColor = vec4(0, 0, 0, 1.0);
-    Raycasting_response ans = raylaunching(beg, end);
+    Raylaunching_response ans = raylaunching(beg, end);
 
     
     if (ans.node_num != -1) {
@@ -281,14 +296,16 @@ void main() {
             FragColor = vec4(1, 1, 1, 1.0);
        }
     }
+    FragColor = vec4(abs(ans.normal), 1);
 
     // Fog
-    float lin_fog_k = (cam.render_distance - LinearFogSize - distance(cam.pos, ans.point)) / LinearFogSize;
+    /*float lin_fog_k = (cam.render_distance - LinearFogSize - distance(cam.pos, ans.point)) / LinearFogSize;
     lin_fog_k = max(0., min(1., lin_fog_k)); // Clip between 0 and 1
     float hyp_fog_k = HyperbolicFogDistacnce / pow(distance(cam.pos, ans.point), HyperbolicFogPower);
     hyp_fog_k = max(0., min(1., hyp_fog_k)); // Clip between 0 and 1
     float fog_k = lin_fog_k * hyp_fog_k;
     FragColor = FragColor * (fog_k) + vec4(FogColor, 1) * (1 - fog_k); // Mix fog & color
+    */
 
     // Saturation
     FragColor = vec4(post_proc(FragColor.xyz), 1.);

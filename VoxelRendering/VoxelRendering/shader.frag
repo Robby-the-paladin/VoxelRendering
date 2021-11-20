@@ -14,7 +14,7 @@ const float ColorSaturation = 0.0;
 const float LinearFogSize = 250;
 // Hyperbolic fog decreases as FogDistacnce / dist ^ FogPower, creates more beautiful result than linear one
 const float HyperbolicFogDistacnce = 10;
-const float HyperbolicFogPower = 1;
+const float HyperbolicFogPower = 0.5;
 const vec3 FogColor = vec3(0,0.5,0.6);
 // Sky light
 const vec3 LightDir = normalize(vec3(2,1,1));

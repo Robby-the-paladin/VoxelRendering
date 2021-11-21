@@ -21,7 +21,7 @@ private:
 
 	struct Sh_node {
 		GLint children[8];
-		GLint terminal_empty_align2[4];
+		GLint terminal_empty_texture_using[4];
 		GLfloat color_refl[4];
 	};
 	vector<Sh_node> buffer;

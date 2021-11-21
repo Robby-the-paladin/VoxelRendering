@@ -21,7 +21,8 @@ const vec3 LightDir = normalize(vec3(2,1,1));
 
 struct Node {
    int children[8]; // 4 * 8 = 32 byte
-   int terminal_empty_align2[4]; // 16 byte
+   int terminal_empty_texture_using[4]; // 12 byte
+   //int texture_nums; // 4 byte
    vec4 color_refl; // 16 byte
 };
 
@@ -33,6 +34,8 @@ struct Camera {
     float viewing_angle; // угол обзора
     // float tilt_angle; // угол наклона камеры (не используется default 90)
 };
+
+uniform sampler2D ourTexture;
 
 layout(std430, binding = 3) buffer tree_buffer
 {
@@ -136,6 +139,7 @@ struct Raylaunching_response {
     int node_num;
     vec3 point;
     vec3 normal;
+    vec4 texture_color;
 };
 
 vec3 build_normal(vec3 point, vec3 l, vec3 r) {
@@ -148,6 +152,27 @@ vec3 build_normal(vec3 point, vec3 l, vec3 r) {
     return normalize(normal);
 }
 
+vec4 get_texture_color(int node_num, vec3 point, vec3 l, vec3 r) {
+    vec4 ans = vec4(0, 0, 0, 0);
+    if (tree[node_num].terminal_empty_texture_using[2] == 0) {
+        return ans;
+    }
+    vec3 center = (l + r) / 2;
+    vec3 normal = point - center;
+    vec3 normal_abs = abs(normal);
+    point -= l;
+    if (normal_abs.x > normal_abs.y && normal_abs.x > normal_abs.z) {
+        ans = texture(ourTexture, point.yz);
+    }
+    if (normal_abs.y > normal_abs.x && normal_abs.y > normal_abs.z) {
+        ans = texture(ourTexture, point.xz);
+    }
+    if (normal_abs.z > normal_abs.x && normal_abs.z > normal_abs.y) {
+        ans = texture(ourTexture, point.xy);
+    }
+    return ans;
+}
+
 Raylaunching_response raylaunching(vec3 beg, vec3 end) {
     vec3 trve_end = end;
 
@@ -157,13 +182,13 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end) {
     if (!belongs(treel, treer, beg)) {
          beg = cubic_selection(beg, end);
          if (!belongs(treel, treer, beg)) {
-            return Raylaunching_response(-1, end, vec3(0,0,0));
+            return Raylaunching_response(-1, end, vec3(0,0,0), vec4(0, 0, 0, 0));
          }
     }
     if (!belongs(treel, treer, end)) {
          end = cubic_selection(end, beg);
          if (!belongs(treel, treer, end)) {
-            return Raylaunching_response(-1, end, vec3(0,0,0));
+            return Raylaunching_response(-1, end, vec3(0,0,0), vec4(0, 0, 0, 0));
          }
     }
     raycasting_requests[top_num] = Raycasting_request(beg, end, 0, treel, treer);
@@ -179,13 +204,13 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end) {
             FragColor = vec4(0, 1, 0, 0);
             continue;
         }
-        if (tree[node_num].terminal_empty_align2[0] != 0) {
-            if (tree[node_num].terminal_empty_align2[1] != 0) { // если пустая вершина возращать -1 в node_num
+        if (tree[node_num].terminal_empty_texture_using[0] != 0) {
+            if (tree[node_num].terminal_empty_texture_using[1] != 0) { // если пустая вершина возращать -1 в node_num
                 FragColor = vec4(0, 1, 0, 0);
                 continue;
             }
             else { // иначе номер node_num и beg в point
-                return Raylaunching_response(node_num, beg, build_normal(beg, l, r));
+                return Raylaunching_response(node_num, beg, build_normal(beg, l, r), get_texture_color(node_num, beg, l, r));
             }
         }
         vec3 ap[3] = line_plane_intersections(beg, end, int((l.x + r.x) / 2), int((l.y + r.y) / 2), int((l.z + r.z) / 2));
@@ -213,7 +238,7 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end) {
 					        vec3 newl = l + add;
 					        vec3 newr = newl + ((r - l) / 2.0);
                             if (belongs(newl, newr, p1) && belongs(newl, newr, p2)) {
-                                if ((tree[new_num].terminal_empty_align2[0] == 0) || (tree[new_num].terminal_empty_align2[1] == 0)) {
+                                if ((tree[new_num].terminal_empty_texture_using[0] == 0) || (tree[new_num].terminal_empty_texture_using[1] == 0)) {
                                     //FragColor += vec4(0.1, 0.1, 0.1, 1);
                                     top_num++;
                                     if (top_num >= MAX_STACK_SIZE) {
@@ -231,7 +256,7 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end) {
 	        }   
         }
     }
-    return Raylaunching_response(-1, trve_end, vec3(0,0,0));
+    return Raylaunching_response(-1, trve_end, vec3(0,0,0), vec4(0, 0, 0, 0));
 }
 
 bool grid(vec3 p) {
@@ -294,13 +319,17 @@ void main() {
     
     if (ans.node_num != -1) {
        FragColor = vec4(tree[ans.node_num].color_refl.xyz, 1.0);
-       if (grid(ans.point)) {
-            //FragColor = vec4(1, 1, 1, 1.0);
+       if (tree[ans.node_num].terminal_empty_texture_using[2] != 0) {
+            FragColor = ans.texture_color;
        }
     }
                                                                                                                                                                                      
     // Light
     FragColor *= max(0, dot(ans.normal, normalize(cam.pos - ans.point)));
+    // Grid rendering
+//    if (grid(ans.point)) {
+//            FragColor = vec4(1, 1, 1, 1.0);
+//    }
 
     // Fog
     float lin_fog_k = (cam.render_distance - LinearFogSize - distance(cam.pos, ans.point)) / LinearFogSize;

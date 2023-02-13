@@ -5,8 +5,6 @@ out vec4 FragColor;
 
 in vec4 gl_FragCoord; // координаты фрагмента
 
-in vec2 gl_PointCoord; // координаты точки на экране
-
 struct Node {
    int children[8]; // 4 * 8 = 32 byte
    int terminal_empty_align2[4]; // 16 byte

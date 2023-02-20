@@ -3,7 +3,7 @@
 #define COLOR_SATURATION 0.0
 out vec4 FragColor;
 
-in vec4 gl_FragCoord; // ГЄГ®Г®Г°Г¤ГЁГ­Г ГІГ» ГґГ°Г ГЈГ¬ГҐГ­ГІГ 
+in vec4 gl_FragCoord; // координаты фрагмента
 
 // TODO: replace following consts with uniforms
 const float ColorSaturation = 0.0;
@@ -25,12 +25,12 @@ struct Node {
 };
 
 struct Camera {
-    vec2 resolution; // Г°Г Г§Г°ГҐГёГҐГ­ГЁГҐ ГЅГЄГ°Г Г­Г 
-    vec3 pos; // ГЇГ®Г«Г®Г¦Г­ГЁГҐ ГЄГ Г¬ГҐГ°Г» Гў ГЄГ®Г®Г°Г¤ГЁГ­ГІГ Гµ Г¬ГЁГ°Г 
-    vec3 dir; // ГўГҐГЄГІГ®Г° Г­Г ГЇГ°Г ГўГ«ГҐГ­ГЁГї ГЄГ Г¬ГҐГ°Г»
-    float render_distance; // Г¤Г Г«ГјГ­Г®Г±ГІГј ГЇГ°Г®Г°ГЁГ±Г®ГўГЄГЁ
-    float viewing_angle; // ГіГЈГ®Г« Г®ГЎГ§Г®Г°Г 
-    // float tilt_angle; // ГіГЈГ®Г« Г­Г ГЄГ«Г®Г­Г  ГЄГ Г¬ГҐГ°Г» (Г­ГҐ ГЁГ±ГЇГ®Г«ГјГ§ГіГҐГІГ±Гї default 90)
+    vec2 resolution; // разрешение экрана
+    vec3 pos; // положние камеры в координтах мира
+    vec3 dir; // вектор направления камеры
+    float render_distance; // дальность прорисовки
+    float viewing_angle; // угол обзора
+    // float tilt_angle; // угол наклона камеры (не используется default 90)
 };
 
 uniform sampler2DArray voxelTexture;
@@ -204,11 +204,11 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end) {
             continue;
         }
         if (tree[node_num].terminal_empty_texture_using[0] != 0) {
-            if (tree[node_num].terminal_empty_texture_using[1] != 0) { // ГҐГ±Г«ГЁ ГЇГіГ±ГІГ Гї ГўГҐГ°ГёГЁГ­Г  ГўГ®Г§Г°Г Г№Г ГІГј -1 Гў node_num
+            if (tree[node_num].terminal_empty_texture_using[1] != 0) { // если пустая вершина возращать -1 в node_num
                 FragColor = vec4(0, 1, 0, 0);
                 continue;
             }
-            else { // ГЁГ­Г Г·ГҐ Г­Г®Г¬ГҐГ° node_num ГЁ beg Гў point
+            else { // иначе номер node_num и beg в point
                 return Raylaunching_response(node_num, beg, build_normal(beg, l, r), get_texture_color(node_num, beg, l, r));
             }
         }
@@ -285,28 +285,28 @@ vec3 post_proc(vec3 col) {
 
 void main() {
     vec3 cam_dir = normalize(cam.dir);
-    // Г­Г Г·Г Г«Г® ГІГ°Г Г±Г±ГЁГ°ГіГҐГ¬Г®ГЈГ® Г®ГІГ°ГҐГ§ГЄГ 
-    vec3 beg = cam.pos; // ГЇГ®Г§ГЁГ¶ГЁГї ГЄГ Г¬ГҐГ°Г»
+    // начало трассируемого отрезка
+    vec3 beg = cam.pos; // позиция камеры
 
-    // ГЄГ®Г­ГҐГ¶ ГІГ°Г Г±Г±ГЁГ°ГіГҐГ¬Г®ГЈГ® Г®ГІГ°ГҐГ§ГЄГ 
-    vec2 coords = gl_FragCoord.xy - vec2(0.5, 0.5) * cam.resolution; // ГЇГ®Г«Г®Г¦ГҐГ­ГЁГҐ ГЇГЁГЄГ±ГҐГ«Гї Г­Г  ГЅГЄГ°Г Г­ГҐ (Г¶ГҐГ­ГІГ° ГЅГЄГ°Г Г­Г  (0, 0))
+    // конец трассируемого отрезка
+    vec2 coords = gl_FragCoord.xy - vec2(0.5, 0.5) * cam.resolution; // положение пикселя на экране (центр экрана (0, 0))
 
-    vec3 old_x = normalize(cross(cam.dir, vec3(0, 0, 1))); // ГҐГ¤ГЁГ­ГЁГ·Г­Г»Г© ГўГҐГЄГІГ®Г° Ox Г¤Г«Гї ГЅГЄГ°Г Г­Г  Гў ГЇГ°Г®Г±ГІГ°Г Г­Г±ГІГўГҐ (x Гў Г±ГІГ Г°Г®Г¬ ГЎГ Г§ГЁГ±ГҐ)
-    vec3 old_z = cam_dir; // ГҐГ¤ГЁГ­ГЁГ·Г­Г»Г© ГўГҐГЄГІГ®Г° Oz Г¤Г«Гї ГЅГЄГ°Г Г­Г  Гў ГЇГ°Г®Г±ГІГ°Г Г­Г±ГІГўГҐ (z Гў Г±ГІГ Г°Г®Г¬ ГЎГ Г§ГЁГ±ГҐ)
-    vec3 old_y = normalize(cross(old_x, old_z)); // ГҐГ¤ГЁГ­ГЁГ·Г­Г»Г© ГўГҐГЄГІГ®Г° Oy Г¤Г«Гї ГЅГЄГ°Г Г­Г  Гў ГЇГ°Г®Г±ГІГ°Г Г­Г±ГІГўГҐ (y Гў Г±ГІГ Г°Г®Г¬ ГЎГ Г§ГЁГ±ГҐ)
-    vec3 old_O = cam.pos; // Г¶ГҐГ­ГІГ° ГЄГ®Г®Г°ГЁГ­Г ГІ Г±ГІГ Г°Г®ГЈГ® Г‘ГЉ Гў Г­Г®ГўГ®Г¬ ГЎГ Г§ГЁГ±ГҐ
+    vec3 old_x = normalize(cross(cam.dir, vec3(0, 0, 1))); // единичный вектор Ox для экрана в пространстве (x в старом базисе)
+    vec3 old_z = cam_dir; // единичный вектор Oz для экрана в пространстве (z в старом базисе)
+    vec3 old_y = normalize(cross(old_x, old_z)); // единичный вектор Oy для экрана в пространстве (y в старом базисе)
+    vec3 old_O = cam.pos; // центр кооринат старого СК в новом базисе
 
-    float cam_dist = tan((M_PI  - cam.viewing_angle) / 2.0) * cam.resolution.x / 2; // Г°Г Г±Г±ГІГ®ГїГ­ГЁГҐ Г®ГІ Г­Г ГЎГ«ГѕГ¤Г ГІГҐГ«Гї Г¤Г® ГЅГЄГ°Г Г­Г 
-    vec3 old_point = vec3(coords, cam_dist); // ГЇГ®Г«Г®Г¦ГҐГ­ГЁГҐ ГІГ®Г·ГЄГЁ Гў ГЇГ°Г®Г±ГІГ°Г Г±ГІГўГҐ, Г·ГҐГ°ГҐГ§ ГЄГ®ГІГ®Г°ГіГѕ ГЇГ°Г®Г©Г¤ВёГІ Г«ГіГ·, Гў Г±ГІГ Г°Г®Г¬ ГЎГ Г§ГЁГ±ГҐ
+    float cam_dist = tan((M_PI  - cam.viewing_angle) / 2.0) * cam.resolution.x / 2; // расстояние от наблюдателя до экрана
+    vec3 old_point = vec3(coords, cam_dist); // положение точки в прострастве, через которую пройдёт луч, в старом базисе
 
-    // ГІГ®Г·ГЄГ  Гў ГЇГ°Г®Г±ГІГ°Г Г±ГІГўГҐ, Г·ГҐГ°ГҐГ§ ГЄГ®ГІГ®Г°ГіГѕ ГЇГ°Г®Г©Г¤ВёГІ Г«ГіГ·
+    // точка в прострастве, через которую пройдёт луч
     vec3 point =  old_x * old_point.xxx + old_y * old_point.yyy + old_z * old_point.zzz + old_O;
 
     
 
-    vec3 end = normalize(point - beg) * cam.render_distance + beg; // ГЄГ®Г­ГҐГ¶ ГІГ°Г Г±Г±ГЁГ°ГіГҐГ¬Г®ГЈГ® Г®ГІГ°ГҐГ§ГЄГ  Г± ГіГ·ВёГІГ®Г¬ Г¤Г Г«ГјГ­Г®Г±ГІГЁ ГЇГ°Г®Г°ГЁГ±Г®ГўГЄГЁ
+    vec3 end = normalize(point - beg) * cam.render_distance + beg; // конец трассируемого отрезка с учётом дальности прорисовки
 
-    // Г­Г®Г¬ГҐГ° ГўГҐГ°ГёГЁГ­Г» Гў ГЄГ®ГІГ®Г°ГіГѕ ГЇГ®ГЇГ Г« Г«ГіГ· (ГЁГ«ГЁ -1) ГЁ ГІГ®Г·ГЄГ  Гў ГЄГ®ГІГ®Г°ГіГѕ ГЇГ®ГЇГ Г« Г«ГіГ· (ГЁГ«ГЁ ГЄГ®Г­ГҐГ¶ Г®ГІГ°ГҐГ§ГЄГ )
+    // номер вершины в которую попал луч (или -1) и точка в которую попал луч (или конец отрезка)
 
 //    FragColor = vec4(1, 0, 0, 1);
 //    if (debug == 1) {

@@ -49,6 +49,61 @@ void Shader::use() {
     glUseProgram(ID);
 }
 
+void Shader::addTextures(const std::vector<std::string>& names) {
+    if (names.size() == 0)
+        return;
+    // Загрузка изображения с помощью stb_image
+    int width, height, nrChannels, depth = names.size();
+    stbi_info(names[0].c_str(), &width, &height, &nrChannels);
+    int texture_size = width * height * nrChannels;
+    void* data = malloc(texture_size * names.size());
+
+    for (int i = 0; i < names.size(); i++) {
+        void* pixels = stbi_load(names[i].c_str(), &width, &height, &nrChannels, 0);
+        memcpy(((char*)data) + texture_size * i, pixels, texture_size);
+        stbi_image_free(pixels);
+    }
+
+    // Генерация текстур из картинки
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
+    if (data)
+    {
+        glTexImage3D(GL_TEXTURE_2D_ARRAY,
+            0,                 // mipmap level
+            GL_RGB,            // gpu texel format
+            width,             // width
+            height,            // height
+            depth,             // depth
+            0,                 // border
+            GL_RGB,            // cpu pixel format
+            GL_UNSIGNED_BYTE,  // cpu pixel coord type
+            data);           // pixel data
+        
+
+        glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+
+        glTexParameteri(GL_TEXTURE_2D_ARRAY,
+            GL_TEXTURE_MIN_FILTER,
+            GL_NEAREST_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY,
+            GL_TEXTURE_MAG_FILTER,
+            GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_LEVEL, 4);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    }
+    else
+    {
+        std::cout << "error: Failed to load texture" << std::endl;
+    }
+
+
+    // Освобождение памяти
+    free(data);
+}
+
 Shader::Shader(const char* vertexPath, const char* fragmentPath) {
     std::string vertexCode;
     std::string fragmentCode;

@@ -5,6 +5,7 @@ public:
 	bool empty = true;
 	Color color;
 	int reflection_k;
+	bool use_textures = true;
 	Voxel() {};
 	Voxel(Color _color, int _reflection_k, bool _empty);
 

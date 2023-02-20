@@ -4,6 +4,7 @@ Voxel::Voxel(Color _color, int _reflection_k, bool _empty) {
 	empty = _empty;
 	color = _color;
 	reflection_k = _reflection_k;
+	
 }
 
 bool operator== (const Voxel& voxel1, const Voxel& voxel2) {

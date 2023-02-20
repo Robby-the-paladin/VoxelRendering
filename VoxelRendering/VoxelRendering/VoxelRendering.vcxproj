@@ -145,13 +145,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\..\..\libraries\glad\src\glad.c" />
     <ClCompile Include="AuxLib.cpp" />
     <ClCompile Include="Color.cpp" />
+    <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Serializer.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="Tree.cpp" />
     <ClCompile Include="Vec3.cpp" />
     <ClCompile Include="Voxel.cpp" />
@@ -162,12 +163,14 @@
     <ClInclude Include="Node.h" />
     <ClInclude Include="Serializer.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="stb_image.h" />
     <ClInclude Include="Tree.h" />
     <ClInclude Include="Vec3.h" />
     <ClInclude Include="Voxel.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shader.frag" />
+    <None Include="shader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

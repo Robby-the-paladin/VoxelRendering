@@ -15,10 +15,11 @@ void Tree::update_buffer(Shader* shader) {
 		Node* cur = q.front().first;
 		Sh_node node;
 		string curShNode = "tree[" + to_string(k) + "]";
-		node.terminal_empty_align2[0] = cur->terminal;
+		node.terminal_empty_texture_using[0] = cur->terminal;
 		//shader->setBool(curShNode + ".terminal", cur->terminal);
 		if (cur->terminal) {
-			node.terminal_empty_align2[1] = cur->voxel.empty;
+			node.terminal_empty_texture_using[1] = cur->voxel.empty;
+			node.terminal_empty_texture_using[2] = cur->voxel.use_textures * ((rand() % 2) + 1);
 			node.color_refl[0] = 1.0 * cur->voxel.color.r / 255.0;
 			node.color_refl[1] = 1.0 * cur->voxel.color.g / 255.0;
 			node.color_refl[2] = 1.0 * cur->voxel.color.b / 255.0;

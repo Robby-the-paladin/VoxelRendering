@@ -3,22 +3,37 @@
 #define COLOR_SATURATION 0.0
 out vec4 FragColor;
 
-in vec4 gl_FragCoord; // координаты фрагмента
+in vec4 gl_FragCoord; // ГЄГ®Г®Г°Г¤ГЁГ­Г ГІГ» ГґГ°Г ГЈГ¬ГҐГ­ГІГ 
+
+// TODO: replace following consts with uniforms
+const float ColorSaturation = 0.0;
+// Fog stats
+// Linear fog decresases lineary from start to cam render distance, is used to cut of not vivsible range
+const float LinearFogSize = 250;
+// Hyperbolic fog decreases as FogDistacnce / dist ^ FogPower, creates more beautiful result than linear one
+const float HyperbolicFogDistacnce = 10;
+const float HyperbolicFogPower = 0.5;
+const vec3 FogColor = vec3(0,0.5,0.6);
+// Sky light
+const vec3 LightDir = normalize(vec3(2,1,1));
 
 struct Node {
    int children[8]; // 4 * 8 = 32 byte
-   int terminal_empty_align2[4]; // 16 byte
+   int terminal_empty_texture_using[4]; // 16 byte
+   //int texture_nums; // 4 byte
    vec4 color_refl; // 16 byte
 };
 
 struct Camera {
-    vec2 resolution; // разрешение экрана
-    vec3 pos; // положние камеры в координтах мира
-    vec3 dir; // вектор направления камеры
-    float render_distance; // дальность прорисовки
-    float viewing_angle; // угол обзора
-    // float tilt_angle; // угол наклона камеры (не используется default 90)
+    vec2 resolution; // Г°Г Г§Г°ГҐГёГҐГ­ГЁГҐ ГЅГЄГ°Г Г­Г 
+    vec3 pos; // ГЇГ®Г«Г®Г¦Г­ГЁГҐ ГЄГ Г¬ГҐГ°Г» Гў ГЄГ®Г®Г°Г¤ГЁГ­ГІГ Гµ Г¬ГЁГ°Г 
+    vec3 dir; // ГўГҐГЄГІГ®Г° Г­Г ГЇГ°Г ГўГ«ГҐГ­ГЁГї ГЄГ Г¬ГҐГ°Г»
+    float render_distance; // Г¤Г Г«ГјГ­Г®Г±ГІГј ГЇГ°Г®Г°ГЁГ±Г®ГўГЄГЁ
+    float viewing_angle; // ГіГЈГ®Г« Г®ГЎГ§Г®Г°Г 
+    // float tilt_angle; // ГіГЈГ®Г« Г­Г ГЄГ«Г®Г­Г  ГЄГ Г¬ГҐГ°Г» (Г­ГҐ ГЁГ±ГЇГ®Г«ГјГ§ГіГҐГІГ±Гї default 90)
 };
+
+uniform sampler2DArray voxelTexture;
 
 layout(std430, binding = 3) buffer tree_buffer
 {
@@ -118,7 +133,46 @@ vec3 cubic_selection(vec3 beg, vec3 end) {
     return new_beg;
 }
 
-Raycasting_response raylaunching(vec3 beg, vec3 end) {
+struct Raylaunching_response {
+    int node_num;
+    vec3 point;
+    vec3 normal;
+    vec4 texture_color;
+};
+
+vec3 build_normal(vec3 point, vec3 l, vec3 r) {
+    vec3 center = (l + r) / 2;
+    vec3 normal = point - center;
+    vec3 normal_abs = abs(normal);
+    if (normal_abs.x < normal_abs.y || normal_abs.x < normal_abs.z) normal.x = 0;
+    if (normal_abs.y < normal_abs.x || normal_abs.y < normal_abs.z) normal.y = 0;
+    if (normal_abs.z < normal_abs.x || normal_abs.z < normal_abs.y) normal.z = 0;
+    return normalize(normal);
+}
+
+vec4 get_texture_color(int node_num, vec3 point, vec3 l, vec3 r) {
+    vec4 ans = vec4(0, 0, 0, 0);
+    if (tree[node_num].terminal_empty_texture_using[2] == 0) {
+        return ans;
+    }
+    vec3 center = (l + r) / 2;
+    vec3 normal = point - center;
+    vec3 normal_abs = abs(normal);
+    point -= l;
+    int layer = tree[node_num].terminal_empty_texture_using[2] - 1;
+    if (normal_abs.x > normal_abs.y && normal_abs.x > normal_abs.z) {
+        ans = texture(voxelTexture, vec3(point.yz, layer));
+    }
+    if (normal_abs.y > normal_abs.x && normal_abs.y > normal_abs.z) {
+        ans = texture(voxelTexture, vec3(point.xz, layer));
+    }
+    if (normal_abs.z > normal_abs.x && normal_abs.z > normal_abs.y) {
+        ans = texture(voxelTexture, vec3(point.xy, layer));
+    }
+    return ans;
+}
+
+Raylaunching_response raylaunching(vec3 beg, vec3 end) {
     vec3 trve_end = end;
 
     Raycasting_request raycasting_requests[MAX_STACK_SIZE];
@@ -127,13 +181,13 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
     if (!belongs(treel, treer, beg)) {
          beg = cubic_selection(beg, end);
          if (!belongs(treel, treer, beg)) {
-            return Raycasting_response(-1, end);
+            return Raylaunching_response(-1, end, vec3(0,0,0), vec4(0, 0, 0, 0));
          }
     }
     if (!belongs(treel, treer, end)) {
          end = cubic_selection(end, beg);
          if (!belongs(treel, treer, end)) {
-            return Raycasting_response(-1, end);
+            return Raylaunching_response(-1, end, vec3(0,0,0), vec4(0, 0, 0, 0));
          }
     }
     raycasting_requests[top_num] = Raycasting_request(beg, end, 0, treel, treer);
@@ -149,13 +203,13 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
             FragColor = vec4(0, 1, 0, 0);
             continue;
         }
-        if (tree[node_num].terminal_empty_align2[0] != 0) {
-            if (tree[node_num].terminal_empty_align2[1] != 0) { // если пустая вершина возращать -1 в node_num
+        if (tree[node_num].terminal_empty_texture_using[0] != 0) {
+            if (tree[node_num].terminal_empty_texture_using[1] != 0) { // ГҐГ±Г«ГЁ ГЇГіГ±ГІГ Гї ГўГҐГ°ГёГЁГ­Г  ГўГ®Г§Г°Г Г№Г ГІГј -1 Гў node_num
                 FragColor = vec4(0, 1, 0, 0);
                 continue;
             }
-            else { // иначе номер node_num и beg в point
-                return Raycasting_response(node_num, beg);
+            else { // ГЁГ­Г Г·ГҐ Г­Г®Г¬ГҐГ° node_num ГЁ beg Гў point
+                return Raylaunching_response(node_num, beg, build_normal(beg, l, r), get_texture_color(node_num, beg, l, r));
             }
         }
         vec3 ap[3] = line_plane_intersections(beg, end, int((l.x + r.x) / 2), int((l.y + r.y) / 2), int((l.z + r.z) / 2));
@@ -183,7 +237,7 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
 					        vec3 newl = l + add;
 					        vec3 newr = newl + ((r - l) / 2.0);
                             if (belongs(newl, newr, p1) && belongs(newl, newr, p2)) {
-                                if ((tree[new_num].terminal_empty_align2[0] == 0) || (tree[new_num].terminal_empty_align2[1] == 0)) {
+                                if ((tree[new_num].terminal_empty_texture_using[0] == 0) || (tree[new_num].terminal_empty_texture_using[1] == 0)) {
                                     //FragColor += vec4(0.1, 0.1, 0.1, 1);
                                     top_num++;
                                     if (top_num >= MAX_STACK_SIZE) {
@@ -191,7 +245,7 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
                                         top_num--;
                                         continue;
                                     } else {
-                                        raycasting_requests[top_num] = Raycasting_request(p2, p1, new_num, newl, newr);
+                                        raycasting_requests[top_num] = Raycasting_request(p[t-1], p[t], new_num, newl, newr);
                                     }
                                 }
                             }
@@ -200,9 +254,8 @@ Raycasting_response raylaunching(vec3 beg, vec3 end) {
 		        }
 	        }   
         }
-        continue;
     }
-    return Raycasting_response(-1, trve_end);
+    return Raylaunching_response(-1, trve_end, vec3(0,0,0), vec4(0, 0, 0, 0));
 }
 
 bool grid(vec3 p) {
@@ -232,49 +285,59 @@ vec3 post_proc(vec3 col) {
 
 void main() {
     vec3 cam_dir = normalize(cam.dir);
-    // начало трассируемого отрезка
-    vec3 beg = cam.pos; // позиция камеры
+    // Г­Г Г·Г Г«Г® ГІГ°Г Г±Г±ГЁГ°ГіГҐГ¬Г®ГЈГ® Г®ГІГ°ГҐГ§ГЄГ 
+    vec3 beg = cam.pos; // ГЇГ®Г§ГЁГ¶ГЁГї ГЄГ Г¬ГҐГ°Г»
 
-    // конец трассируемого отрезка
-    vec2 coords = gl_FragCoord.xy - vec2(0.5, 0.5) * cam.resolution; // положение пикселя на экране (центр экрана (0, 0))
+    // ГЄГ®Г­ГҐГ¶ ГІГ°Г Г±Г±ГЁГ°ГіГҐГ¬Г®ГЈГ® Г®ГІГ°ГҐГ§ГЄГ 
+    vec2 coords = gl_FragCoord.xy - vec2(0.5, 0.5) * cam.resolution; // ГЇГ®Г«Г®Г¦ГҐГ­ГЁГҐ ГЇГЁГЄГ±ГҐГ«Гї Г­Г  ГЅГЄГ°Г Г­ГҐ (Г¶ГҐГ­ГІГ° ГЅГЄГ°Г Г­Г  (0, 0))
 
-    vec3 old_x = normalize(cross(cam.dir, vec3(0, 0, 1))); // единичный вектор Ox для экрана в пространстве (x в старом базисе)
-    vec3 old_z = cam_dir; // единичный вектор Oz для экрана в пространстве (z в старом базисе)
-    vec3 old_y = normalize(cross(old_x, old_z)); // единичный вектор Oy для экрана в пространстве (y в старом базисе)
-    vec3 old_O = cam.pos; // центр кооринат старого СК в новом базисе
+    vec3 old_x = normalize(cross(cam.dir, vec3(0, 0, 1))); // ГҐГ¤ГЁГ­ГЁГ·Г­Г»Г© ГўГҐГЄГІГ®Г° Ox Г¤Г«Гї ГЅГЄГ°Г Г­Г  Гў ГЇГ°Г®Г±ГІГ°Г Г­Г±ГІГўГҐ (x Гў Г±ГІГ Г°Г®Г¬ ГЎГ Г§ГЁГ±ГҐ)
+    vec3 old_z = cam_dir; // ГҐГ¤ГЁГ­ГЁГ·Г­Г»Г© ГўГҐГЄГІГ®Г° Oz Г¤Г«Гї ГЅГЄГ°Г Г­Г  Гў ГЇГ°Г®Г±ГІГ°Г Г­Г±ГІГўГҐ (z Гў Г±ГІГ Г°Г®Г¬ ГЎГ Г§ГЁГ±ГҐ)
+    vec3 old_y = normalize(cross(old_x, old_z)); // ГҐГ¤ГЁГ­ГЁГ·Г­Г»Г© ГўГҐГЄГІГ®Г° Oy Г¤Г«Гї ГЅГЄГ°Г Г­Г  Гў ГЇГ°Г®Г±ГІГ°Г Г­Г±ГІГўГҐ (y Гў Г±ГІГ Г°Г®Г¬ ГЎГ Г§ГЁГ±ГҐ)
+    vec3 old_O = cam.pos; // Г¶ГҐГ­ГІГ° ГЄГ®Г®Г°ГЁГ­Г ГІ Г±ГІГ Г°Г®ГЈГ® Г‘ГЉ Гў Г­Г®ГўГ®Г¬ ГЎГ Г§ГЁГ±ГҐ
 
-    float cam_dist = tan((M_PI  - cam.viewing_angle) / 2.0) * cam.resolution.x / 2; // расстояние от наблюдателя до экрана
-    vec3 old_point = vec3(coords, cam_dist); // положение точки в прострастве, через которую пройдёт луч, в старом базисе
+    float cam_dist = tan((M_PI  - cam.viewing_angle) / 2.0) * cam.resolution.x / 2; // Г°Г Г±Г±ГІГ®ГїГ­ГЁГҐ Г®ГІ Г­Г ГЎГ«ГѕГ¤Г ГІГҐГ«Гї Г¤Г® ГЅГЄГ°Г Г­Г 
+    vec3 old_point = vec3(coords, cam_dist); // ГЇГ®Г«Г®Г¦ГҐГ­ГЁГҐ ГІГ®Г·ГЄГЁ Гў ГЇГ°Г®Г±ГІГ°Г Г±ГІГўГҐ, Г·ГҐГ°ГҐГ§ ГЄГ®ГІГ®Г°ГіГѕ ГЇГ°Г®Г©Г¤ВёГІ Г«ГіГ·, Гў Г±ГІГ Г°Г®Г¬ ГЎГ Г§ГЁГ±ГҐ
 
-    // точка в прострастве, через которую пройдёт луч
+    // ГІГ®Г·ГЄГ  Гў ГЇГ°Г®Г±ГІГ°Г Г±ГІГўГҐ, Г·ГҐГ°ГҐГ§ ГЄГ®ГІГ®Г°ГіГѕ ГЇГ°Г®Г©Г¤ВёГІ Г«ГіГ·
     vec3 point =  old_x * old_point.xxx + old_y * old_point.yyy + old_z * old_point.zzz + old_O;
 
     
 
-    vec3 end = normalize(point - beg) * cam.render_distance + beg; // конец трассируемого отрезка с учётом дальности прорисовки
+    vec3 end = normalize(point - beg) * cam.render_distance + beg; // ГЄГ®Г­ГҐГ¶ ГІГ°Г Г±Г±ГЁГ°ГіГҐГ¬Г®ГЈГ® Г®ГІГ°ГҐГ§ГЄГ  Г± ГіГ·ВёГІГ®Г¬ Г¤Г Г«ГјГ­Г®Г±ГІГЁ ГЇГ°Г®Г°ГЁГ±Г®ГўГЄГЁ
 
-    // номер вершины в которую попал луч (или -1) и точка в которую попал луч (или конец отрезка)
+    // Г­Г®Г¬ГҐГ° ГўГҐГ°ГёГЁГ­Г» Гў ГЄГ®ГІГ®Г°ГіГѕ ГЇГ®ГЇГ Г« Г«ГіГ· (ГЁГ«ГЁ -1) ГЁ ГІГ®Г·ГЄГ  Гў ГЄГ®ГІГ®Г°ГіГѕ ГЇГ®ГЇГ Г« Г«ГіГ· (ГЁГ«ГЁ ГЄГ®Г­ГҐГ¶ Г®ГІГ°ГҐГ§ГЄГ )
 
 //    FragColor = vec4(1, 0, 0, 1);
 //    if (debug == 1) {
 //        FragColor = vec4(0, 1, 0, 1);
 //    }
     FragColor = vec4(0, 0, 0, 1.0);
-    Raycasting_response ans = raylaunching(beg, end);
+    Raylaunching_response ans = raylaunching(beg, end);
 
-    // Fog
-    float fog_k = 10. / distance(cam.pos, ans.point);
-    fog_k = max(0., min(1., fog_k));
-    vec4 fog_color = vec4(vec3(1., 1., 1.) * 0.7, 1.);
     
     if (ans.node_num != -1) {
        FragColor = vec4(tree[ans.node_num].color_refl.xyz, 1.0);
-       if (grid(ans.point)) {
-            FragColor = vec4(1, 1, 1, 1.0);
+       if (tree[ans.node_num].terminal_empty_texture_using[2] != 0) {
+            FragColor = ans.texture_color;
        }
     }
+                                                                                                                                                                                     
+    // Light
+    FragColor *= max(0, dot(ans.normal, normalize(cam.pos - ans.point)));
+    // Grid rendering
+//    if (grid(ans.point)) {
+//            FragColor = vec4(1, 1, 1, 1.0);
+//    }
 
-    FragColor = FragColor * (fog_k) + fog_color * (1 - fog_k);
+    // Fog
+    float lin_fog_k = (cam.render_distance - LinearFogSize - distance(cam.pos, ans.point)) / LinearFogSize;
+    lin_fog_k = max(0., min(1., lin_fog_k)); // Clip between 0 and 1
+    float hyp_fog_k = HyperbolicFogDistacnce / pow(distance(cam.pos, ans.point), HyperbolicFogPower);
+    hyp_fog_k = max(0., min(1., hyp_fog_k)); // Clip between 0 and 1
+    float fog_k = lin_fog_k * hyp_fog_k;
+    FragColor = FragColor * (fog_k) + vec4(FogColor, 1) * (1 - fog_k); // Mix fog & color
+    
 
     // Saturation
     FragColor = vec4(post_proc(FragColor.xyz), 1.);

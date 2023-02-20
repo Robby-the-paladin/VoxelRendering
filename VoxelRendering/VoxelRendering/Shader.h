@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <vector>
 #include "stb_image.h"
 
 class Shader
@@ -24,7 +25,7 @@ public:
     void setFloat(const std::string& name, float value) const;
     void set3f(const std::string& name, float val1, float val2, float val3);
     void set2f(const std::string& name, float val1, float val2);
-    void addTexture(const std::string& name);
+    void addTextures(const std::vector<std::string>& names);
 
 private:
     // utility function for checking shader compilation/linking errors.

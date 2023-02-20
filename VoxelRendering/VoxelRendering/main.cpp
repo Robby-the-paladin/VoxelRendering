@@ -10,6 +10,7 @@
 #include <math.h>
 #include <glm.hpp>
 #include <queue>
+#include <vector>
 
 #include <iostream>
 
@@ -66,7 +67,7 @@ void init(Shader* shader) {
     }
     tree.build(mat, shader);*/
     tree.load_vox_file("example.ex", shader);
-    shader->addTexture("texture.jpg");
+    shader->addTextures(std::vector<std::string>({ "texture.jpg", "texture2.jpg"}));
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     glfwSetKeyCallback(window, key_callback);

@@ -21,7 +21,7 @@ const vec3 LightDir = normalize(vec3(2,1,1));
 
 struct Node {
    int children[8]; // 4 * 8 = 32 byte
-   int terminal_empty_texture_using[4]; // 12 byte
+   int terminal_empty_texture_using[4]; // 16 byte
    //int texture_nums; // 4 byte
    vec4 color_refl; // 16 byte
 };
@@ -35,7 +35,7 @@ struct Camera {
     // float tilt_angle; // угол наклона камеры (не используется default 90)
 };
 
-uniform sampler2D ourTexture;
+uniform sampler2DArray voxelTexture;
 
 layout(std430, binding = 3) buffer tree_buffer
 {
@@ -161,14 +161,15 @@ vec4 get_texture_color(int node_num, vec3 point, vec3 l, vec3 r) {
     vec3 normal = point - center;
     vec3 normal_abs = abs(normal);
     point -= l;
+    int layer = tree[node_num].terminal_empty_texture_using[2] - 1;
     if (normal_abs.x > normal_abs.y && normal_abs.x > normal_abs.z) {
-        ans = texture(ourTexture, point.yz);
+        ans = texture(voxelTexture, vec3(point.yz, layer));
     }
     if (normal_abs.y > normal_abs.x && normal_abs.y > normal_abs.z) {
-        ans = texture(ourTexture, point.xz);
+        ans = texture(voxelTexture, vec3(point.xz, layer));
     }
     if (normal_abs.z > normal_abs.x && normal_abs.z > normal_abs.y) {
-        ans = texture(ourTexture, point.xy);
+        ans = texture(voxelTexture, vec3(point.xy, layer));
     }
     return ans;
 }

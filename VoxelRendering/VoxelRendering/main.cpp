@@ -157,7 +157,7 @@ void step(Shader* shader) {
         SCR_WIDTH, SCR_HEIGHT,              // camera resolution
         cam_pos.x, cam_pos.y, cam_pos.z,    // camera position
         cam_dir.x, cam_dir.y, cam_dir.z,    // camera direction
-        render_distance,                                 // render distance
+        render_distance,                    // render distance
         M_PI / 2.0);                        // viewing angle
 
     glfwGetWindowSize(window, &SCR_WIDTH, &SCR_HEIGHT);
@@ -174,8 +174,6 @@ void step(Shader* shader) {
 
 int main()
 {
-    // glfw: initialize and configure
-    // ------------------------------
     glfwInit();
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -188,7 +186,7 @@ int main()
 
     // glfw window creation
     // --------------------
-    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
+    window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "VoxelRendering", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -197,27 +195,13 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-    // glad: load all OpenGL function pointers
-    // ---------------------------------------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
 
-    // build and compile our shader program
-    // ------------------------------------
-    Shader ourShader("shader.vert", "shader.frag");
-
-    // set up vertex data (and buffer(s)) and configure vertex attributes
-    // ------------------------------------------------------------------
-    float vertices_left[] = {
-        // positions         // colors
-         1.0f, -1.0f, 0.0f,  1.0f, 0.0f, 0.0f,  // bottom right
-        -1.0f, -1.0f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom left
-        -1.0f, 1.0f, 0.0f,  0.0f, 0.0f, 1.0f   // top left
-    };
+    Shader VShader("shader.vert", "shader.frag");
 
     // set vertex data 
     float vertices[] = {
@@ -238,20 +222,11 @@ int main()
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
-
-    // bind vertex array object
     glBindVertexArray(VAO);
-
-    // bind vertex buffer object
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // bind element buffer objects
-    // EBO is stored in the VAO
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // registered VBO as the vertex attributes
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
@@ -263,7 +238,7 @@ int main()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    init(&ourShader);
+    init(&VShader);
 #ifdef DEBUG
     int step_time = aux::get_milli_count();
     int render_time = aux::get_milli_count();
@@ -283,22 +258,19 @@ int main()
         render_time = aux::get_milli_count() - render_time;
         step_time = aux::get_milli_count();
 #endif // DEBUG
-        step(&ourShader);
+        step(&VShader);
 #ifdef DEBUG
         step_time = aux::get_milli_count() - step_time;
         cout << "stime: " << step_time << " rtime: " << render_time << endl;
         render_time = aux::get_milli_count();
 #endif // DEBUG
 
-        // draw triangle
-        ourShader.use();
+        // draw triangles
+        VShader.use();
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-        // glfw: swap buffers
         glfwSwapBuffers(window);
-
-        // glfw: poll IO events (keys & mouse)
         glfwPollEvents();
 
     }
@@ -307,27 +279,21 @@ int main()
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
-    glDeleteProgram(ourShader.ID);
+    glDeleteProgram(VShader.ID);
 
-    // glfw: terminate and clear all previously GLFW allocated resources
     glfwTerminate();
 
     return 0;
 }
 
-// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
+// process input
 void processInput(GLFWwindow* window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 }
 
-// glfw: whenever the window size changed (by OS or user resize) this callback function executes
-// ---------------------------------------------------------------------------------------------
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-    // make sure the viewport matches the new window dimensions; note that width and 
-    // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
 }

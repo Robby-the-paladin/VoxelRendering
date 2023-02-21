@@ -5,7 +5,6 @@ out vec4 FragColor;
 
 in vec4 gl_FragCoord; // координаты фрагмента
 
-// TODO: replace following consts with uniforms
 const float ColorSaturation = 0.0;
 // Fog stats
 // Linear fog decresases lineary from start to cam render distance, is used to cut of not vivsible range
@@ -159,6 +158,8 @@ vec4 get_texture_color(int node_num, vec3 point, vec3 l, vec3 r) {
     vec3 normal = point - center;
     vec3 normal_abs = abs(normal);
     point -= l;
+    ivec3 size = textureSize(voxelTexture, 0);
+
     int layer = tree[node_num].terminal_empty_texture_using[2] - 1;
     if (normal_abs.x > normal_abs.y && normal_abs.x > normal_abs.z) {
         ans = texture(voxelTexture, vec3(point.yz, layer));

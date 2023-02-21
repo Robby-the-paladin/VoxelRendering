@@ -48,10 +48,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void init(Shader* shader) {
-    vector<vector<vector<Voxel>>> mat;
-    int _size = 64;
+    /*vector<vector<vector<Voxel>>> mat;
+    int _size = 256;
 
-    /*mat.resize(_size);
+    mat.resize(_size);
     for (int i = 0; i < _size; i++) {
         mat[i].resize(_size);
         for (int j = 0; j < _size; j++) {
@@ -67,7 +67,7 @@ void init(Shader* shader) {
     }
     tree.build(mat, shader);*/
     tree.load_vox_file("example.ex", shader);
-    shader->addTextures(std::vector<std::string>({ "texture.jpg", "texture2.jpg"}));
+    shader->addTextures(std::vector<std::string>({ "texture.jpg"}));
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     glfwSetKeyCallback(window, key_callback);

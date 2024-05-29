@@ -26,7 +26,6 @@ private:
 	void recursive_set(Node* node, Vec3 l, Vec3 r, Vec3 coords0, Vec3 coords1, Voxel value);
 	void push(Node* node);
 
-	vector<Sh_node>& buffer;
 	GLuint ssbo = 0;
 
 	void update_buffer(Shader* shader);
@@ -36,10 +35,9 @@ public:
 	Node root;
 	int max_size = 0;
 
-	Tree(vector<Sh_node>& _buffer) :
-		buffer(_buffer) {};
+	Tree(){};
 
-	void load_vox_file(string name, Shader* shader, vector<int>& offsets);
+	void load_vox_file(string name, Shader* shader);
 	void build(vector<vector<vector<Voxel>>> mat, Shader* shader);
 	void destroy();
 	void set(Vec3 coords0, Vec3 coords1, Voxel value, Shader* shader);

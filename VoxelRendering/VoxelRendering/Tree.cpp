@@ -80,7 +80,7 @@ void Tree::build(vector<vector<vector<Voxel>>> mat, Shader* shader) {
 	update_buffer(shader);
 }
 
-void Tree::load_vox_file(string name, Shader* shader, vector<int>& offsets) {
+void Tree::load_vox_file(string name, Shader* shader) {
 	char ChunkID[4], Format[4];
 	int ChunkX, ChunkY, ChunkZ, Version, NumVoxels, ColorIndex;
 	int MainChunkContentSize, MainChunkChildrenSize;
@@ -213,8 +213,6 @@ void Tree::load_vox_file(string name, Shader* shader, vector<int>& offsets) {
 			}
 		}
 	}
-
-	offsets.push_back(buffer.size() * sizeof(Sh_node));
 
 	build(mat, shader);
 }

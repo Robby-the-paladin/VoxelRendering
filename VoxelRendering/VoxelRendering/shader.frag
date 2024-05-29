@@ -12,7 +12,7 @@ const float LinearFogSize = 250;
 // Hyperbolic fog decreases as FogDistacnce / dist ^ FogPower, creates more beautiful result than linear one
 const float HyperbolicFogDistacnce = 10;
 const float HyperbolicFogPower = 0.5;
-const int max_scene_size = 2;
+const int scenes_number = 2;
 const vec3 FogColor = vec3(0,0.5,0.6);
 // Sky light
 const vec3 LightDir = normalize(vec3(2,1,1));
@@ -51,8 +51,6 @@ layout(std430, binding = 10) buffer borders_buffer
 };
 
 uniform Camera cam;
-
-uniform int scenes_number;
 
 bool belongs(vec3 l, vec3 r, vec3 point) {
     float eps = 0.0001;
@@ -121,17 +119,17 @@ const int MAX_STACK_SIZE = 32;
 
 vec3 cubic_selection(vec3 beg, vec3 end, int offset_num) {
     vec3 new_beg = end + (end - beg);
-    vec3 ap[3] = line_plane_intersections(beg, end, borders[offsets[offset_num] * 2 ].x, borders[offsets[offset_num] * 2 ].y, borders[offsets[offset_num] * 2 ].z);
+    vec3 ap[3] = line_plane_intersections(beg, end, borders[offset_num * 2].x, borders[offset_num * 2].y, borders[offset_num * 2].z);
     for (int i = 0; i < 3; i++) {
-        if (belongs(borders[offsets[offset_num] * 2].rgb, borders[offsets[offset_num] * 2 + 1].rgb, ap[i]) && belongs(beg, end, ap[i])) {
+        if (belongs(borders[offsets[offset_num] * 2].rgb, borders[offset_num * 2 + 1].rgb, ap[i]) && belongs(beg, end, ap[i])) {
             if (distance(beg, new_beg) > distance(beg, ap[i])) {
                 new_beg = ap[i];
             }
         }
     }
-    vec3 ap2[3] = line_plane_intersections(beg, end, borders[offsets[offset_num] * 2 + 1].x, borders[offsets[offset_num] * 2 + 1].y, borders[offsets[offset_num] * 2 + 1].z);
+    vec3 ap2[3] = line_plane_intersections(beg, end, borders[offset_num * 2 + 1].x, borders[offset_num * 2 + 1].y, borders[offset_num * 2 + 1].z);
     for (int i = 0; i < 3; i++) {
-        if (belongs(borders[offsets[offset_num] * 2].rgb, borders[offsets[offset_num] * 2 + 1].rgb, ap2[i]) && belongs(beg, end, ap2[i])) {
+        if (belongs(borders[offsets[offset_num] * 2].rgb, borders[offset_num * 2 + 1].rgb, ap2[i]) && belongs(beg, end, ap2[i])) {
             if (distance(beg, new_beg) > distance(beg, ap2[i])) {
                 new_beg = ap2[i];
             }
@@ -190,19 +188,19 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end, int offset_num) {
     Raycasting_request raycasting_requests[MAX_STACK_SIZE];
     int top_num = -1;
     top_num++;
-    if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offsets[offset_num] * 2 + 1].rgb, beg)) {
+    if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offset_num * 2 + 1].rgb, beg)) {
          beg = cubic_selection(beg, end, offset_num);
-         if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offsets[offset_num] * 2 + 1].rgb, beg)) {
+         if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offset_num * 2 + 1].rgb, beg)) {
             return Raylaunching_response(-1, end, vec3(0,0,0), vec4(0, 0, 0, 0));
          }
     }
-    if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offsets[offset_num] * 2 + 1].rgb, end)) {
+    if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offset_num * 2 + 1].rgb, end)) {
          end = cubic_selection(end, beg, offset_num);
-         if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offsets[offset_num] * 2 + 1].rgb, end)) {
+         if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offset_num * 2 + 1].rgb, end)) {
             return Raylaunching_response(-1, end, vec3(0,0,0), vec4(0, 0, 0, 0));
          }
     }
-    raycasting_requests[top_num] = Raycasting_request(beg, end, 0, borders[offsets[offset_num] * 2 ].rgb, borders[offsets[offset_num] * 2 + 1].rgb);
+    raycasting_requests[top_num] = Raycasting_request(beg, end, 0, borders[offset_num * 2].rgb, borders[offset_num * 2 + 1].rgb);
     while(top_num != -1) {
         Raycasting_request req = raycasting_requests[top_num];
         top_num--;
@@ -249,7 +247,7 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end, int offset_num) {
 					        vec3 newl = l + add;
 					        vec3 newr = newl + ((r - l) / 2.0);
                             if (belongs(newl, newr, p1) && belongs(newl, newr, p2)) {
-                                if ((tree[new_num].terminal_empty_texture_using[0] == 0) || (tree[new_num].terminal_empty_texture_using[1] == 0)) {
+                                if ((tree[new_num  + offsets[offset_num]].terminal_empty_texture_using[0] == 0) || (tree[new_num  + offsets[offset_num]].terminal_empty_texture_using[1] == 0)) {
                                     //FragColor += vec4(0.1, 0.1, 0.1, 1);
                                     top_num++;
                                     if (top_num >= MAX_STACK_SIZE) {
@@ -329,10 +327,16 @@ void main() {
     int scene = 0;
     for (int i = 1; i < scenes_number; i++) {
         Raylaunching_response scene_ans = raylaunching(beg, end, i);
-        if (distance(cam.pos, ans.point) > distance(cam.pos, scene_ans.point)) {
+        if (distance(cam.pos, ans.point) >= distance(cam.pos, scene_ans.point)) {
             ans = scene_ans;
             scene = i;
         }
+//        if (scene_ans.node_num == -1.0) {
+//            FragColor = vec4(0, 1, 0, 1); // Зеленый, если данные правильные
+//        } else {
+//            FragColor = vec4(1, 0, 0, 1); // Красный, если данные неправильные
+//        }
+//        FragColor = vec4(distance(cam.pos, ans.point), distance(cam.pos, scene_ans.point), 0, 1.0) / 10000.0 ;
     }
 
     
@@ -361,5 +365,4 @@ void main() {
 
     // Saturation
     FragColor = vec4(post_proc(FragColor.xyz), 1.);
-
 }

@@ -1,4 +1,5 @@
 #version 430 core
+#pragma optionNV(unroll none)
 #define M_PI 3.1415926535897932384626433832795
 #define COLOR_SATURATION 0.0
 out vec4 FragColor;
@@ -326,17 +327,11 @@ void main() {
     Raylaunching_response ans = raylaunching(beg, end, 0);
     int scene = 0;
     for (int i = 1; i < scenes_number; i++) {
-        Raylaunching_response scene_ans = raylaunching(beg, end, i);
-        if (distance(cam.pos, ans.point) >= distance(cam.pos, scene_ans.point)) {
+        Raylaunching_response scene_ans = raylaunching(beg, ans.point, i);
+        if (scene_ans.node_num != -1) {
             ans = scene_ans;
             scene = i;
         }
-//        if (scene_ans.node_num == -1.0) {
-//            FragColor = vec4(0, 1, 0, 1); // Зеленый, если данные правильные
-//        } else {
-//            FragColor = vec4(1, 0, 0, 1); // Красный, если данные неправильные
-//        }
-//        FragColor = vec4(distance(cam.pos, ans.point), distance(cam.pos, scene_ans.point), 0, 1.0) / 10000.0 ;
     }
 
     

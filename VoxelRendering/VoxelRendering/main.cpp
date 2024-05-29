@@ -38,7 +38,79 @@ float render_distance = 512;
 float camera_speed = 0.2f;
 double yaw = 0, pitch = 0;
 
-Tree tree;
+vector<glm::vec4> borders;
+
+vector<int> offsets;
+
+vector<Sh_node> scene_buffer;
+
+Tree tree(scene_buffer), tree2(scene_buffer);
+
+void load_buffers() {
+    // Finding subroot (minimal root containing beg & end)
+    Vec3 l = Vec3(0, 0, 0), r = Vec3(tree.max_size, tree.max_size, tree.max_size);
+    bool cycle = true;
+    Node* subroot = &tree.root;
+    // Init bfs queue
+    queue<pair<Node*, pair<int, int>>> q;
+
+    // Serializing
+    q.push(make_pair(subroot, make_pair(-1, -1)));
+    int k = 0;
+    while (!q.empty()) {
+        Node* cur = q.front().first;
+        Sh_node node;
+        node.terminal_empty_texture_using[0] = cur->terminal;
+        if (cur->terminal) {
+            node.terminal_empty_texture_using[1] = cur->voxel.empty;
+            node.terminal_empty_texture_using[2] = cur->voxel.texture_num;
+            node.color_refl[0] = 1.0 * cur->voxel.color.r / 255.0;
+            node.color_refl[1] = 1.0 * cur->voxel.color.g / 255.0;
+            node.color_refl[2] = 1.0 * cur->voxel.color.b / 255.0;
+            node.color_refl[3] = cur->voxel.reflection_k;
+        }
+        else {
+            for (int i = 0; i < 8; i++) {
+                if (cur->children[i] != nullptr) {
+                    q.push(make_pair(cur->children[i], make_pair(k, i)));
+                }
+            }
+        }
+        if (q.front().second.first != -1) {
+            scene_buffer[q.front().second.first].children[q.front().second.second] = k;
+        }
+        q.pop();
+        k++;
+        scene_buffer.push_back(node);
+    }
+
+
+    GLuint ssbo;
+
+
+    Sh_node* s = scene_buffer.data();
+    glGenBuffers(1, &ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sh_node) * scene_buffer.size(), s, GL_STATIC_DRAW);
+
+    GLuint binding_point_index = 3;
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
+
+    int* sh_offsets = offsets.data();
+
+    glGenBuffers(1, &ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(int) * offsets.size(), sh_offsets, GL_STATIC_DRAW);
+
+    binding_point_index = 6;
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
+
+    glGenBuffers(1, &ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * borders.size(), borders.data(), GL_STATIC_DRAW);
+    binding_point_index = 10;
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
+}
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode) {
     if (action == GLFW_PRESS)
@@ -66,8 +138,36 @@ void init(Shader* shader) {
         }
     }
     tree.build(mat, shader);*/
-    tree.load_vox_file("example.ex", shader);
+
+
+    tree.load_vox_file("room.vox", shader, offsets);
+
+    borders.push_back(glm::vec4(0, 0, 0, 0));
+    borders.push_back(glm::vec4(tree.max_size, tree.max_size, tree.max_size, 0));
+
+    /*tree2.load_vox_file("sphere.vox", shader);
+
+    borders.push_back(glm::vec4(0, 0, 0, 0));
+    borders.push_back(glm::vec4(tree2.max_size, tree2.max_size, tree2.max_size, 0));*/
+
+    load_buffers();
+
+    shader->setInt("scenes_number", 1);
+
+
+    /*GLuint ssbo = 8;
+    int* s = offsets.data();
+    glGenBuffers(1, &ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(int) * offsets.size(), s, GL_DYNAMIC_COPY);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 5);
+
+    GLuint binding_point_index = 6;
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);*/
+
+
     shader->addTextures(std::vector<std::string>({ "texture.jpg"}));
+
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
     glfwSetKeyCallback(window, key_callback);

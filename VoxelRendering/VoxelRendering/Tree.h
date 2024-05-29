@@ -11,6 +11,13 @@
 #include <string.h>
 
 using namespace std;
+
+struct Sh_node {
+	GLint children[8];
+	GLint terminal_empty_texture_using[4];
+	GLfloat color_refl[4];
+};
+
 class Tree {
 private:
 	Node* recursive_build(vector<vector<vector<Voxel>>>* mat, Vec3 coords0, Vec3 coords1);
@@ -19,22 +26,20 @@ private:
 	void recursive_set(Node* node, Vec3 l, Vec3 r, Vec3 coords0, Vec3 coords1, Voxel value);
 	void push(Node* node);
 
-	struct Sh_node {
-		GLint children[8];
-		GLint terminal_empty_texture_using[4];
-		GLfloat color_refl[4];
-	};
-	vector<Sh_node> buffer;
+	vector<Sh_node>& buffer;
 	GLuint ssbo = 0;
 
 	void update_buffer(Shader* shader);
 public:
+
+
 	Node root;
 	int max_size = 0;
 
-	Tree() {};
+	Tree(vector<Sh_node>& _buffer) :
+		buffer(_buffer) {};
 
-	void load_vox_file(string name, Shader* shader);
+	void load_vox_file(string name, Shader* shader, vector<int>& offsets);
 	void build(vector<vector<vector<Voxel>>> mat, Shader* shader);
 	void destroy();
 	void set(Vec3 coords0, Vec3 coords1, Voxel value, Shader* shader);

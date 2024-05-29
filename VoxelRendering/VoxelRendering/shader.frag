@@ -12,6 +12,7 @@ const float LinearFogSize = 250;
 // Hyperbolic fog decreases as FogDistacnce / dist ^ FogPower, creates more beautiful result than linear one
 const float HyperbolicFogDistacnce = 10;
 const float HyperbolicFogPower = 0.5;
+const int max_scene_size = 2;
 const vec3 FogColor = vec3(0,0.5,0.6);
 // Sky light
 const vec3 LightDir = normalize(vec3(2,1,1));
@@ -38,10 +39,20 @@ layout(std430, binding = 3) buffer tree_buffer
 {
     Node tree[];
 };
-uniform vec3 treer;
-uniform vec3 treel;
+
+layout(std430, binding = 6) buffer offsets_buffer
+{
+    int offsets[];
+};
+
+layout(std430, binding = 10) buffer borders_buffer
+{
+    vec4 borders[];
+};
 
 uniform Camera cam;
+
+uniform int scenes_number;
 
 bool belongs(vec3 l, vec3 r, vec3 point) {
     float eps = 0.0001;
@@ -108,19 +119,19 @@ struct Raycasting_response {
 
 const int MAX_STACK_SIZE = 32;
 
-vec3 cubic_selection(vec3 beg, vec3 end) {
+vec3 cubic_selection(vec3 beg, vec3 end, int offset_num) {
     vec3 new_beg = end + (end - beg);
-    vec3 ap[3] = line_plane_intersections(beg, end, treel.x, treel.y, treel.z);
+    vec3 ap[3] = line_plane_intersections(beg, end, borders[offsets[offset_num] * 2 ].x, borders[offsets[offset_num] * 2 ].y, borders[offsets[offset_num] * 2 ].z);
     for (int i = 0; i < 3; i++) {
-        if (belongs(treel, treer, ap[i]) && belongs(beg, end, ap[i])) {
+        if (belongs(borders[offsets[offset_num] * 2].rgb, borders[offsets[offset_num] * 2 + 1].rgb, ap[i]) && belongs(beg, end, ap[i])) {
             if (distance(beg, new_beg) > distance(beg, ap[i])) {
                 new_beg = ap[i];
             }
         }
     }
-    vec3 ap2[3] = line_plane_intersections(beg, end, treer.x, treer.y, treer.z);
+    vec3 ap2[3] = line_plane_intersections(beg, end, borders[offsets[offset_num] * 2 + 1].x, borders[offsets[offset_num] * 2 + 1].y, borders[offsets[offset_num] * 2 + 1].z);
     for (int i = 0; i < 3; i++) {
-        if (belongs(treel, treer, ap2[i]) && belongs(beg, end, ap2[i])) {
+        if (belongs(borders[offsets[offset_num] * 2].rgb, borders[offsets[offset_num] * 2 + 1].rgb, ap2[i]) && belongs(beg, end, ap2[i])) {
             if (distance(beg, new_beg) > distance(beg, ap2[i])) {
                 new_beg = ap2[i];
             }
@@ -149,9 +160,9 @@ vec3 build_normal(vec3 point, vec3 l, vec3 r) {
     return normalize(normal);
 }
 
-vec4 get_texture_color(int node_num, vec3 point, vec3 l, vec3 r) {
+vec4 get_texture_color(int node_num, vec3 point, vec3 l, vec3 r, int offset_num) {
     vec4 ans = vec4(0, 0, 0, 0);
-    if (tree[node_num].terminal_empty_texture_using[2] == 0) {
+    if (tree[node_num + offsets[offset_num]].terminal_empty_texture_using[2] == 0) {
         return ans;
     }
     vec3 center = (l + r) / 2;
@@ -160,7 +171,7 @@ vec4 get_texture_color(int node_num, vec3 point, vec3 l, vec3 r) {
     point -= l;
     ivec3 size = textureSize(voxelTexture, 0);
 
-    int layer = tree[node_num].terminal_empty_texture_using[2] - 1;
+    int layer = tree[node_num + offsets[offset_num]].terminal_empty_texture_using[2] - 1;
     if (normal_abs.x > normal_abs.y && normal_abs.x > normal_abs.z) {
         ans = texture(voxelTexture, vec3(point.yz, layer));
     }
@@ -173,25 +184,25 @@ vec4 get_texture_color(int node_num, vec3 point, vec3 l, vec3 r) {
     return ans;
 }
 
-Raylaunching_response raylaunching(vec3 beg, vec3 end) {
+Raylaunching_response raylaunching(vec3 beg, vec3 end, int offset_num) {
     vec3 trve_end = end;
 
     Raycasting_request raycasting_requests[MAX_STACK_SIZE];
     int top_num = -1;
     top_num++;
-    if (!belongs(treel, treer, beg)) {
-         beg = cubic_selection(beg, end);
-         if (!belongs(treel, treer, beg)) {
+    if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offsets[offset_num] * 2 + 1].rgb, beg)) {
+         beg = cubic_selection(beg, end, offset_num);
+         if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offsets[offset_num] * 2 + 1].rgb, beg)) {
             return Raylaunching_response(-1, end, vec3(0,0,0), vec4(0, 0, 0, 0));
          }
     }
-    if (!belongs(treel, treer, end)) {
-         end = cubic_selection(end, beg);
-         if (!belongs(treel, treer, end)) {
+    if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offsets[offset_num] * 2 + 1].rgb, end)) {
+         end = cubic_selection(end, beg, offset_num);
+         if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offsets[offset_num] * 2 + 1].rgb, end)) {
             return Raylaunching_response(-1, end, vec3(0,0,0), vec4(0, 0, 0, 0));
          }
     }
-    raycasting_requests[top_num] = Raycasting_request(beg, end, 0, treel, treer);
+    raycasting_requests[top_num] = Raycasting_request(beg, end, 0, borders[offsets[offset_num] * 2 ].rgb, borders[offsets[offset_num] * 2 + 1].rgb);
     while(top_num != -1) {
         Raycasting_request req = raycasting_requests[top_num];
         top_num--;
@@ -204,13 +215,13 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end) {
             FragColor = vec4(0, 1, 0, 0);
             continue;
         }
-        if (tree[node_num].terminal_empty_texture_using[0] != 0) {
-            if (tree[node_num].terminal_empty_texture_using[1] != 0) { // если пустая вершина возращать -1 в node_num
+        if (tree[node_num + offsets[offset_num]].terminal_empty_texture_using[0] != 0) {
+            if (tree[node_num + offsets[offset_num]].terminal_empty_texture_using[1] != 0) { // если пустая вершина возращать -1 в node_num
                 FragColor = vec4(0, 1, 0, 0);
                 continue;
             }
             else { // иначе номер node_num и beg в point
-                return Raylaunching_response(node_num, beg, build_normal(beg, l, r), get_texture_color(node_num, beg, l, r));
+                return Raylaunching_response(node_num, beg, build_normal(beg, l, r), get_texture_color(node_num, beg, l, r, offset_num));
             }
         }
         vec3 ap[3] = line_plane_intersections(beg, end, int((l.x + r.x) / 2), int((l.y + r.y) / 2), int((l.z + r.z) / 2));
@@ -233,7 +244,7 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end) {
                 for (int i = 0; i < 2; i++) {
 		            for (int j = 0; j < 2; j++) {
 			            for (int k = 0; k < 2; k++) {
-                            int new_num = tree[node_num].children[i * 4 + j * 2 + k];
+                            int new_num = tree[node_num + offsets[offset_num]].children[i * 4 + j * 2 + k];
                             vec3 add = vec3(i * (r.x - l.x) / 2.0, j * (r.y - l.y) / 2.0, k * (r.z - l.z) / 2.0);
 					        vec3 newl = l + add;
 					        vec3 newr = newl + ((r - l) / 2.0);
@@ -314,12 +325,20 @@ void main() {
 //        FragColor = vec4(0, 1, 0, 1);
 //    }
     FragColor = vec4(0, 0, 0, 1.0);
-    Raylaunching_response ans = raylaunching(beg, end);
+    Raylaunching_response ans = raylaunching(beg, end, 0);
+    int scene = 0;
+    for (int i = 1; i < scenes_number; i++) {
+        Raylaunching_response scene_ans = raylaunching(beg, end, i);
+        if (distance(cam.pos, ans.point) > distance(cam.pos, scene_ans.point)) {
+            ans = scene_ans;
+            scene = i;
+        }
+    }
 
     
     if (ans.node_num != -1) {
-       FragColor = vec4(tree[ans.node_num].color_refl.xyz, 1.0);
-       if (tree[ans.node_num].terminal_empty_texture_using[2] != 0) {
+       FragColor = vec4(tree[ans.node_num + offsets[scene]].color_refl.xyz, 1.0);
+       if (tree[ans.node_num + offsets[scene]].terminal_empty_texture_using[2] != 0) {
             FragColor = ans.texture_color;
        }
     }
@@ -342,4 +361,5 @@ void main() {
 
     // Saturation
     FragColor = vec4(post_proc(FragColor.xyz), 1.);
+
 }

@@ -7,7 +7,7 @@ void Tree::grid_build(vector<vector<vector<Voxel>>>* mat, Vec3 beg, Vec3 end, ve
 				if (mat->size() <= i || mat->operator[](i).size() <= j || mat->operator[](i)[j].size() <= k)
 					grid_buffer.push_back(glm::vec4(0, 0, 0, 0));
 				else {
-					auto mat_cell = mat->operator[](i)[k][j];
+					auto mat_cell = mat->operator[](i)[j][k];
 					grid_buffer.push_back(glm::vec4(mat_cell.color.r / 255.0, mat_cell.color.g / 255.0, mat_cell.color.b / 255.0, !mat_cell.empty));
 				}
 			}
@@ -19,7 +19,6 @@ Node* Tree::recursive_build(vector<vector<vector<Voxel>>>* mat, Vec3 coords0, Ve
 	if (grid_depth == 0) {
 		Node* ans = new Node();
 		ans->terminal = 1;
-		ans->voxel = mat->operator[](coords0.x)[coords0.y][coords0.z];
 		ans->grid_offset = grid_buffer.size();
 		grid_build(mat, coords0, coords1, grid_buffer);
 		return ans;

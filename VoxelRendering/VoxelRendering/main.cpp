@@ -16,7 +16,7 @@
 
 #define M_PI 3.1415926535897932384626433832795
 
-int grid_depth = 2;
+int grid_depth = 0;
 
 // Function for conversion
 double degree_to_rad(double degree) {
@@ -169,7 +169,7 @@ void init(Shader* shader) {
         }
     }
     tree.build(mat, shader);*/
-    vector<string> files = { "room.vox"};
+    vector<string> files = { "sphere.vox"};
 
     for (auto file : files) {
 

@@ -51,6 +51,11 @@ layout(std430, binding = 10) buffer borders_buffer
     vec4 borders[];
 };
 
+layout(std430, binding = 12) buffer grid_buffer
+{
+    vec4 grid_buf[];
+};
+
 uniform Camera cam;
 
 bool belongs(vec3 l, vec3 r, vec3 point) {
@@ -183,6 +188,62 @@ vec4 get_texture_color(int node_num, vec3 point, vec3 l, vec3 r, int offset_num)
     return ans;
 }
 
+vec3 trace_calc(vec3 beg, vec3 end, vec3 point) {
+    vec3 delta = normalize(end - beg);
+    if (point.x != 0.5)
+        return beg + abs(point.x - beg.x) * delta;  // Корректировка позиции вдоль оси x
+    if (point.y != 0.5)
+        return beg + abs(point.y - beg.y) * delta;  // Корректировка позиции вдоль оси y
+    if (point.z != 0.5)
+        return beg + abs(point.z - beg.z) * delta;  // Корректировка позиции вдоль оси z
+    return end;
+}
+
+Raylaunching_response trace_grid(int node_num, int offset, vec3 beg, vec3 end, vec3 grid_size, vec3 grid_beg) {
+    beg = beg - grid_beg;
+    end = end - grid_beg;
+        
+    vec3 delta = end - beg;
+    vec3 ray_step = sign(delta);
+    
+    vec3 curx = trace_calc(beg, end, vec3((ray_step.x > 0.0 ? ceil(beg.x) : floor(beg.x)), 0.5, 0.5));
+    vec3 cury = trace_calc(beg, end, vec3(0.5, (ray_step.y > 0.0 ? ceil(beg.y) : floor(beg.y)), 0.5));
+    vec3 curz = trace_calc(beg, end, vec3(0.5, 0.5, (ray_step.z > 0.0 ? ceil(beg.z) : floor(beg.z))));
+
+    vec3 arr[5] = {curx, cury, curz, beg, end};
+    arr = sort(arr, beg, beg, end);
+
+    while (arr[2] != end) {
+        if (arr[2] == curx) {
+            vec3 coords = floor(curx - grid_beg);
+            int grid_ind = int(coords.x + coords.y * grid_size.x + coords.z * grid_size.x * grid_size.y);
+            if (coords.x >= 0 && coords.y >= 0 && coords.x >= 0 && grid_buf[grid_ind + offset].a != 0.0) {
+                return Raylaunching_response(node_num, curx + grid_beg, build_normal(curx, vec3(0, 0, 0), grid_size), vec4(grid_buf[grid_ind + offset].rgb, 1.0));
+            }
+            curx = trace_calc(beg, end, vec3(curx.x + 1, 0.5, 0.5));
+        }
+        if (arr[2] == cury) {
+            vec3 coords = floor(cury - grid_beg);
+            int grid_ind = int(coords.x + coords.y * grid_size.x + coords.z * grid_size.x * grid_size.y);
+            if (coords.x >= 0 && coords.y >= 0 && coords.x >= 0 && grid_buf[grid_ind + offset].a != 0.0) {
+                return Raylaunching_response(node_num, cury + grid_beg, build_normal(cury, vec3(0, 0, 0), grid_size), vec4(grid_buf[grid_ind + offset].rgb, 1.0));
+            }
+            cury = trace_calc(beg, end, vec3(0.5, cury.y + 1, 0.5));
+        }
+        if (arr[2] == curz) {
+            vec3 coords = floor(curz - grid_beg);
+            int grid_ind = int(coords.x + coords.y * grid_size.x + coords.z * grid_size.x * grid_size.y);
+            if (coords.x >= 0 && coords.y >= 0 && coords.x >= 0 && grid_buf[grid_ind + offset].a != 0.0) {
+                return Raylaunching_response(node_num, curz + grid_beg, build_normal(curz, vec3(0, 0, 0), grid_size), vec4(grid_buf[grid_ind + offset].rgb, 1.0));
+            }
+            curz = trace_calc(beg, end, vec3(0.5, 0.5, curz.z + 1));
+        }
+        arr = vec3[5](curx, cury, curz, beg, end);
+        arr = sort(arr, beg, beg, end);
+    }
+    return Raylaunching_response(-1, end, vec3(0,0,0), vec4(0, 0, 0, 0));
+}
+
 Raylaunching_response raylaunching(vec3 beg, vec3 end, int offset_num) {
     vec3 trve_end = end;
 
@@ -215,6 +276,15 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end, int offset_num) {
             continue;
         }
         if (tree[node_num + offsets[offset_num]].terminal_empty_texture_using[0] != 0) {
+            if (tree[node_num + offsets[offset_num]].terminal_empty_texture_using[3] != -1) {
+                return Raylaunching_response(-2, trve_end, vec3(0,0,0), vec4(1, 0, 0, 1));
+                int offset = tree[node_num + offsets[offset_num]].terminal_empty_texture_using[3];
+                Raylaunching_response res = trace_grid(node_num, offset, beg, end, r - l, l);
+                if (res.node_num != -1)
+                    return res;
+                FragColor = vec4(0, 1, 0, 0);
+                continue;
+            }
             if (tree[node_num + offsets[offset_num]].terminal_empty_texture_using[1] != 0) { // если пустая вершина возращать -1 в node_num
                 FragColor = vec4(0, 1, 0, 0);
                 continue;
@@ -334,30 +404,33 @@ void main() {
         }
     }
 
-    
-    if (ans.node_num != -1) {
-       FragColor = vec4(tree[ans.node_num + offsets[scene]].color_refl.xyz, 1.0);
-       if (tree[ans.node_num + offsets[scene]].terminal_empty_texture_using[2] != 0) {
-            FragColor = ans.texture_color;
-       }
-    }
+    if (ans.node_num != -2) {    
+        if (ans.node_num != -1) {
+            FragColor = vec4(tree[ans.node_num + offsets[scene]].color_refl.xyz, 1.0);
+            if (tree[ans.node_num + offsets[scene]].terminal_empty_texture_using[2] != 0) {
+                FragColor = ans.texture_color;
+            }
+        }
                                                                                                                                                                                      
-    // Light
-    FragColor *= max(0, dot(ans.normal, normalize(cam.pos - ans.point)));
-    // Grid rendering
-//    if (grid(ans.point)) {
-//            FragColor = vec4(1, 1, 1, 1.0);
-//    }
+        // Light
+        FragColor *= max(0, dot(ans.normal, normalize(cam.pos - ans.point)));
+        // Grid rendering
+        //    if (grid(ans.point)) {
+        //            FragColor = vec4(1, 1, 1, 1.0);
+        //    }
 
-    // Fog
-    float lin_fog_k = (cam.render_distance - LinearFogSize - distance(cam.pos, ans.point)) / LinearFogSize;
-    lin_fog_k = max(0., min(1., lin_fog_k)); // Clip between 0 and 1
-    float hyp_fog_k = HyperbolicFogDistacnce / pow(distance(cam.pos, ans.point), HyperbolicFogPower);
-    hyp_fog_k = max(0., min(1., hyp_fog_k)); // Clip between 0 and 1
-    float fog_k = lin_fog_k * hyp_fog_k;
-    FragColor = FragColor * (fog_k) + vec4(FogColor, 1) * (1 - fog_k); // Mix fog & color
+        // Fog
+        float lin_fog_k = (cam.render_distance - LinearFogSize - distance(cam.pos, ans.point)) / LinearFogSize;
+        lin_fog_k = max(0., min(1., lin_fog_k)); // Clip between 0 and 1
+        float hyp_fog_k = HyperbolicFogDistacnce / pow(distance(cam.pos, ans.point), HyperbolicFogPower);
+        hyp_fog_k = max(0., min(1., hyp_fog_k)); // Clip between 0 and 1
+        float fog_k = lin_fog_k * hyp_fog_k;
+        FragColor = FragColor * (fog_k) + vec4(FogColor, 1) * (1 - fog_k); // Mix fog & color
     
 
-    // Saturation
-    FragColor = vec4(post_proc(FragColor.xyz), 1.);
+        // Saturation
+        FragColor = vec4(post_proc(FragColor.xyz), 1.);
+    }
+    else
+        FragColor = ans.texture_color;
 }

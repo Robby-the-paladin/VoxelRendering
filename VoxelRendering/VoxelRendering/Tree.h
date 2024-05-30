@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <glm.hpp>
 
 using namespace std;
 
@@ -20,15 +21,14 @@ struct Sh_node {
 
 class Tree {
 private:
-	Node* recursive_build(vector<vector<vector<Voxel>>>* mat, Vec3 coords0, Vec3 coords1);
+	Node* recursive_build(vector<vector<vector<Voxel>>>* mat, Vec3 coords0, Vec3 coords1, vector<glm::vec4>& grid_buffer, int grid_depth);
 	void recursive_destroy(Node* node);
-	Voxel* recursive_get(Node* node, Vec3 l, Vec3 r, Vec3 coords);
-	void recursive_set(Node* node, Vec3 l, Vec3 r, Vec3 coords0, Vec3 coords1, Voxel value);
+	Voxel* recursive_get(Node* node, Vec3 l, Vec3 r, Vec3 coords, vector<glm::vec4>& grid_buffer);
+	void recursive_set(Node* node, Vec3 l, Vec3 r, Vec3 coords0, Vec3 coords1, Voxel value, vector<glm::vec4>& grid_buffer);
 	void push(Node* node);
+	void grid_build(vector<vector<vector<Voxel>>>* mat, Vec3 beg, Vec3 end, vector<glm::vec4>& grid_buffer);
 
 	GLuint ssbo = 0;
-
-	void update_buffer(Shader* shader);
 public:
 
 
@@ -37,11 +37,11 @@ public:
 
 	Tree(){};
 
-	void load_vox_file(string name, Shader* shader);
-	void build(vector<vector<vector<Voxel>>> mat, Shader* shader);
+	void load_vox_file(string name, vector<glm::vec4>& grid_buffer, int grid_depth = -1);
+	void build(vector<vector<vector<Voxel>>> mat, vector<glm::vec4>& grid_buffer, int grid_depth = -1);
 	void destroy();
-	void set(Vec3 coords0, Vec3 coords1, Voxel value, Shader* shader);
-	Voxel* get(Vec3 coords);
+	void set(Vec3 coords0, Vec3 coords1, Voxel value, vector<glm::vec4>& grid_buffer);
+	Voxel* get(Vec3 coords, vector<glm::vec4>& grid_buffer);
 	
 	void shader_serializing(Shader* shader);
 };

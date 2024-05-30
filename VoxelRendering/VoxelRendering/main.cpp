@@ -16,6 +16,8 @@
 
 #define M_PI 3.1415926535897932384626433832795
 
+int grid_depth = 0;
+
 // Function for conversion
 double degree_to_rad(double degree) {
     return (degree * (M_PI / 180));
@@ -39,6 +41,8 @@ float camera_speed = 0.2f;
 double yaw = 0, pitch = 0;
 
 vector<glm::vec4> borders;
+
+vector<glm::vec4> grid_buffer;
 
 vector<int> offsets;
 
@@ -66,6 +70,9 @@ void load_buffers() {
             if (cur->terminal) {
                 node.terminal_empty_texture_using[1] = cur->voxel.empty;
                 node.terminal_empty_texture_using[2] = cur->voxel.texture_num;
+                if (cur->grid_offset != -1)
+                    cout << "\ngoff " << cur->grid_offset << "\n";
+                node.terminal_empty_texture_using[3] = cur->grid_offset;
                 node.color_refl[0] = 1.0 * cur->voxel.color.r / 255.0;
                 node.color_refl[1] = 1.0 * cur->voxel.color.g / 255.0;
                 node.color_refl[2] = 1.0 * cur->voxel.color.b / 255.0;
@@ -126,6 +133,14 @@ void load_buffers() {
     glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * borders.size(), borders.data(), GL_STATIC_DRAW);
     binding_point_index = 10;
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
+
+    cout << "\n" << grid_buffer.size() << "\n";
+
+    glGenBuffers(1, &ssbo);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * grid_buffer.size(), borders.data(), GL_STATIC_DRAW);
+    binding_point_index = 12;
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode) {
@@ -154,13 +169,13 @@ void init(Shader* shader) {
         }
     }
     tree.build(mat, shader);*/
-    vector<string> files = { "sphere.vox", "monu3.vox"};
+    vector<string> files = { "3.vox"};
 
     for (auto file : files) {
 
         trees.push_back({});
 
-        trees.back().load_vox_file(file, shader);
+        trees.back().load_vox_file(file, grid_buffer, grid_depth);
 
         borders.push_back(glm::vec4(0, 0, 0, 0));
         borders.push_back(glm::vec4(trees.back().max_size, trees.back().max_size, trees.back().max_size, 0));

@@ -4,6 +4,7 @@
 class Node {
 public:
 	bool terminal = true;
+	int grid_offset = -1;
 	Voxel voxel;
 	Node* children[8];
 

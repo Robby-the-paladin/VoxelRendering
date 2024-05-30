@@ -1,60 +1,38 @@
 ﻿#include "Tree.h"
 
-void Tree::update_buffer(Shader* shader) {
-	// Finding subroot (minimal root containing beg & end)
-	//Vec3 l = Vec3(0, 0, 0), r = Vec3(max_size, max_size, max_size);
-	//bool cycle = true;
-	//Node* subroot = &root;
-	//// Init bfs queue
-	//queue<pair<Node*, pair<int, int>>> q;
-
-	//// Serializing
-	//q.push(make_pair(subroot, make_pair(-1, -1)));
-	//int k = 0;
-	//while (!q.empty()) {
-	//	Node* cur = q.front().first;
-	//	Sh_node node;
-	//	//string curShNode = "tree[" + to_string(k) + "]";
-	//	node.terminal_empty_texture_using[0] = cur->terminal;
-	//	//shader->setBool(curShNode + ".terminal", cur->terminal);
-	//	if (cur->terminal) {
-	//		node.terminal_empty_texture_using[1] = cur->voxel.empty;
-	//		node.terminal_empty_texture_using[2] = cur->voxel.texture_num;
-	//		node.color_refl[0] = 1.0 * cur->voxel.color.r / 255.0;
-	//		node.color_refl[1] = 1.0 * cur->voxel.color.g / 255.0;
-	//		node.color_refl[2] = 1.0 * cur->voxel.color.b / 255.0;
-	//		node.color_refl[3] = cur->voxel.reflection_k;
-	//	}
-	//	else {
-	//		for (int i = 0; i < 8; i++) {
-	//			if (cur->children[i] != nullptr) {
-	//				q.push(make_pair(cur->children[i], make_pair(k, i)));
-	//			}
-	//		}
-	//	}
-	//	if (q.front().second.first != -1) {
-	//		buffer[q.front().second.first].children[q.front().second.second] = k;
-	//	}
-	//	q.pop();
-	//	k++;
-	//	buffer.push_back(node);
-	//}
-
-	//Sh_node* s = buffer.data();
-	//glGenBuffers(1, &ssbo);
-	//glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-	//glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sh_node) * buffer.size(), s, GL_DYNAMIC_COPY);
-	//glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-
-	//GLuint binding_point_index = 3;
-	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
+void Tree::grid_build(vector<vector<vector<Voxel>>>* mat, Vec3 beg, Vec3 end, vector<glm::vec4>& grid_buffer) {
+	for (int i = beg.x; i < end.x; i++) {
+		for (int j = beg.y; j < end.y; j++) {
+			for (int k = beg.z; k < end.z; k++) {
+				cout << "\n l " << beg.x << " " << beg.y << " " << beg.z << " r " << end.x << " " << end.y << " " << end.z << "\n";
+				cout << "\n" << i << " " << j << " " << k << "\n";
+				if (mat->size() <= i || mat->operator[](i).size() <= j || mat->operator[](i)[j].size() <= k)
+					grid_buffer.push_back(glm::vec4(0, 0, 0, 0));
+				else {
+					auto mat_cell = mat->operator[](i)[j][k];
+					grid_buffer.push_back(glm::vec4(mat_cell.color.r, mat_cell.color.g, mat_cell.color.b, !mat_cell.empty));
+				}
+			}
+		}
+	}
 }
 
-Node* Tree::recursive_build(vector<vector<vector<Voxel>>>* mat, Vec3 coords0, Vec3 coords1) {
+Node* Tree::recursive_build(vector<vector<vector<Voxel>>>* mat, Vec3 coords0, Vec3 coords1, vector<glm::vec4>& grid_buffer, int grid_depth) {
+	if (grid_depth == 0) {
+		Node* ans = new Node();
+		ans->terminal = 1;
+		ans->voxel = mat->operator[](coords0.x)[coords0.y][coords0.z];
+		ans->grid_offset = grid_buffer.size();
+		grid_build(mat, coords0, coords1, grid_buffer);
+		return ans;
+	}
 	if (coords0 + Vec3(1, 1, 1) == coords1) {
 		if (mat->size() < coords1.x || mat->operator[](coords0.x).size() < coords1.y
 			|| mat->operator[](coords0.x)[coords0.y].size() < coords1.z) {
-			return nullptr;
+			Node* ans = new Node();
+			ans->terminal = 1;
+			ans->voxel.empty = true;
+			return ans;
 		}
 		Node* ans = new Node();
 		ans->terminal = 1;
@@ -66,21 +44,21 @@ Node* Tree::recursive_build(vector<vector<vector<Voxel>>>* mat, Vec3 coords0, Ve
 		for (int j = 0; j < 2; j++) {
 			for (int k = 0; k < 2; k++) {
 				Vec3 add = Vec3(i * (coords1.x - coords0.x) / 2, j * (coords1.y - coords0.y) / 2, k * (coords1.z - coords0.z) / 2);
-				children[i * 4 + j * 2 + k] = recursive_build(mat, coords0 + add, ((coords1 + coords0) / 2) + add);
+				children[i * 4 + j * 2 + k] = recursive_build(mat, coords0 + add, ((coords1 + coords0) / 2) + add, grid_buffer, grid_depth - 1);
 			}
 		}
 	}
 	return new Node(children);
 }
 
-void Tree::build(vector<vector<vector<Voxel>>> mat, Shader* shader) {
+void Tree::build(vector<vector<vector<Voxel>>> mat, vector<glm::vec4>& grid_buffer, int grid_depth) {
 	max_size = max(max(mat.size(), mat[0].size()), mat[0][0].size());
 	max_size = (1 << int(log(max_size - 1) / log(2) + 1));
-	root = *recursive_build(&mat, Vec3(0, 0, 0), Vec3(max_size, max_size, max_size));
-	update_buffer(shader);
+	cout << "\n Max size = " << max_size << " real size " << mat.size() << " " << mat[0].size() << " " << mat[0][0].size() << "\n";
+	root = *recursive_build(&mat, Vec3(0, 0, 0), Vec3(max_size, max_size, max_size), grid_buffer, grid_depth);
 }
 
-void Tree::load_vox_file(string name, Shader* shader) {
+void Tree::load_vox_file(string name, vector<glm::vec4>& grid_buffer, int grid_depth) {
 	char ChunkID[4], Format[4];
 	int ChunkX, ChunkY, ChunkZ, Version, NumVoxels, ColorIndex;
 	int MainChunkContentSize, MainChunkChildrenSize;
@@ -214,7 +192,7 @@ void Tree::load_vox_file(string name, Shader* shader) {
 		}
 	}
 
-	build(mat, shader);
+	build(mat, grid_buffer, grid_depth);
 }
 
 void Tree::recursive_destroy(Node* node) {
@@ -230,7 +208,7 @@ void Tree::destroy() {
 	recursive_destroy(&root);
 }
 
-Voxel* Tree::recursive_get(Node* node, Vec3 l, Vec3 r, Vec3 coords) {
+Voxel* Tree::recursive_get(Node* node, Vec3 l, Vec3 r, Vec3 coords, vector<glm::vec4>& grid_buffer) {
 	if (!coords.belongs(l, r) || node == nullptr) {
 		return nullptr;
 	}
@@ -242,7 +220,7 @@ Voxel* Tree::recursive_get(Node* node, Vec3 l, Vec3 r, Vec3 coords) {
 			for (int k = 0; k < 2; k++) {
 				Node* child = node->children[i * 4 + j * 2 + k];
 				Vec3 add = Vec3(i * (r.x - l.x) / 2, j * (r.y - l.y) / 2, k * (r.z - l.z) / 2);
-				Voxel* result = recursive_get(child, l + add, ((r + l) / 2) + add, coords);
+				Voxel* result = recursive_get(child, l + add, ((r + l) / 2) + add, coords, grid_buffer);
 				if (result != nullptr) 
 					return result;
 			}
@@ -251,8 +229,8 @@ Voxel* Tree::recursive_get(Node* node, Vec3 l, Vec3 r, Vec3 coords) {
 	return nullptr;
 }
 
-Voxel* Tree::get(Vec3 coords) {
-	return recursive_get(&root, Vec3(0, 0, 0), Vec3(max_size, max_size, max_size), coords);
+Voxel* Tree::get(Vec3 coords, vector<glm::vec4>& grid_buffer) {
+	return recursive_get(&root, Vec3(0, 0, 0), Vec3(max_size, max_size, max_size), coords, grid_buffer);
 }
 
 void Tree::push(Node* node) {
@@ -266,7 +244,7 @@ void Tree::push(Node* node) {
 	}
 }
 
-void Tree::recursive_set(Node* node, Vec3 l, Vec3 r, Vec3 coords0, Vec3 coords1, Voxel value) {
+void Tree::recursive_set(Node* node, Vec3 l, Vec3 r, Vec3 coords0, Vec3 coords1, Voxel value, vector<glm::vec4>& grid_buffer) {
 	if (node == nullptr) {
 		return;
 	}
@@ -285,15 +263,14 @@ void Tree::recursive_set(Node* node, Vec3 l, Vec3 r, Vec3 coords0, Vec3 coords1,
 			for (int k = 0; k < 2; k++) {
 				Node* child = node->children[i * 4 + j * 2 + k];
 				Vec3 add = Vec3(i * (r.x - l.x) / 2, j * (r.y - l.y) / 2, k * (r.z - l.z) / 2);
-				recursive_set(child, l + add, ((r + l) / 2) + add, coords0, coords1, value);
+				recursive_set(child, l + add, ((r + l) / 2) + add, coords0, coords1, value, grid_buffer);
 			}
 		}
 	}
 }
 
-void Tree::set(Vec3 coords0, Vec3 coords1, Voxel value, Shader* shader) {
-	recursive_set(&root, Vec3(0, 0, 0), Vec3(max_size, max_size, max_size), coords0, coords1, value);
-	update_buffer(shader);
+void Tree::set(Vec3 coords0, Vec3 coords1, Voxel value, vector<glm::vec4>& grid_buffer) {
+	recursive_set(&root, Vec3(0, 0, 0), Vec3(max_size, max_size, max_size), coords0, coords1, value, grid_buffer);
 }
 
 void Tree::shader_serializing(Shader* shader) {

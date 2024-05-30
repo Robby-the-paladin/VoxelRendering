@@ -16,7 +16,7 @@
 
 #define M_PI 3.1415926535897932384626433832795
 
-int grid_depth = 0;
+int grid_depth = -1;
 
 // Function for conversion
 double degree_to_rad(double degree) {
@@ -127,10 +127,10 @@ void load_buffers() {
     for (int i = 0; i < borders.size(); i++) {
         cout << borders[i].r << " " << borders[i].g << " " << borders[i].b << "\n";
     }
-    
+
     glGenBuffers(1, &ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * borders.size(), borders.data(), GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * borders.size(), borders.data(), GL_DYNAMIC_COPY);
     binding_point_index = 10;
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
 
@@ -169,7 +169,7 @@ void init(Shader* shader) {
         }
     }
     tree.build(mat, shader);*/
-    vector<string> files = { "sphere.vox"};
+    vector<string> files = { "room.vox", "sphere.vox"};
 
     for (auto file : files) {
 
@@ -251,6 +251,23 @@ void do_movement() {
         move_dir -= up;
     if (keys[GLFW_KEY_LEFT_SHIFT]) {
         cameraSpeed = camera_speed * 2;
+
+        GLuint ssbo;
+
+        borders[2] = borders[2] + glm::vec4(1, 0, 0, 0);
+        borders[3] = borders[3] + glm::vec4(1, 0, 0, 0);
+
+        cout << "\n" << borders.size() << "\n";
+
+        for (int i = 0; i < borders.size(); i++) {
+            cout << borders[i].r << " " << borders[i].g << " " << borders[i].b << "\n";
+        }
+
+        glGenBuffers(1, &ssbo);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+        glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * borders.size(), borders.data(), GL_DYNAMIC_COPY);
+        GLuint binding_point_index = 10;
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
     }
     else {
         cameraSpeed = camera_speed;

@@ -1,5 +1,6 @@
 #version 430 core
-#pragma optionNV(unroll none)
+#pragma unroll
+//#pragma optionNV(unroll none)
 #define M_PI 3.1415926535897932384626433832795
 #define COLOR_SATURATION 0.0
 out vec4 FragColor;
@@ -13,7 +14,7 @@ const float LinearFogSize = 250;
 // Hyperbolic fog decreases as FogDistacnce / dist ^ FogPower, creates more beautiful result than linear one
 const float HyperbolicFogDistacnce = 10;
 const float HyperbolicFogPower = 0.5;
-const int scenes_number = 1;
+const int scenes_number = 2;
 const vec3 FogColor = vec3(0,0.5,0.6);
 // Sky light
 const vec3 LightDir = normalize(vec3(2,1,1));

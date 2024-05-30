@@ -191,11 +191,11 @@ vec4 get_texture_color(int node_num, vec3 point, vec3 l, vec3 r, int offset_num)
 vec3 trace_calc(vec3 beg, vec3 end, vec3 point) {
     vec3 delta = normalize(end - beg);
     if (point.x != 0.5)
-        return beg + abs(point.x - beg.x) * delta;  // Корректировка позиции вдоль оси x
+        return beg + abs((point.x - beg.x) / delta.x) * delta;
     if (point.y != 0.5)
-        return beg + abs(point.y - beg.y) * delta;  // Корректировка позиции вдоль оси y
+        return beg + abs((point.y - beg.y) / delta.y) * delta;
     if (point.z != 0.5)
-        return beg + abs(point.z - beg.z) * delta;  // Корректировка позиции вдоль оси z
+        return beg + abs((point.z - beg.z) / delta.z) * delta;
     return end;
 }
 
@@ -205,40 +205,59 @@ Raylaunching_response trace_grid(int node_num, int offset, vec3 beg, vec3 end, v
         
     vec3 delta = end - beg;
     vec3 ray_step = sign(delta);
+    if (ray_step.x == 0)
+        ray_step.x = 1;
+    if (ray_step.y == 0)
+        ray_step.y = 1;
+    if (ray_step.z == 0)
+        ray_step.z = 1;
     
     vec3 curx = trace_calc(beg, end, vec3((ray_step.x > 0.0 ? ceil(beg.x) : floor(beg.x)), 0.5, 0.5));
     vec3 cury = trace_calc(beg, end, vec3(0.5, (ray_step.y > 0.0 ? ceil(beg.y) : floor(beg.y)), 0.5));
     vec3 curz = trace_calc(beg, end, vec3(0.5, 0.5, (ray_step.z > 0.0 ? ceil(beg.z) : floor(beg.z))));
 
-    vec3 arr[5] = {curx, cury, curz, beg, end};
+    vec3 arr[5] = {beg, curx, cury, curz, end};
     arr = sort(arr, beg, beg, end);
 
-    while (arr[2] != end) {
-        if (arr[2] == curx) {
-            vec3 coords = floor(curx - grid_beg);
-            int grid_ind = int(coords.x + coords.y * grid_size.x + coords.z * grid_size.x * grid_size.y);
-            if (coords.x >= 0 && coords.y >= 0 && coords.x >= 0 && grid_buf[grid_ind + offset].a != 0.0) {
-                return Raylaunching_response(node_num, curx + grid_beg, build_normal(curx, vec3(0, 0, 0), grid_size), vec4(grid_buf[grid_ind + offset].rgb, 1.0));
+    while (arr[1] != end) {
+        if (arr[1] == curx) {
+            vec3 normal = vec3(1, 0, 0);
+            if (dot(normalize(delta), normal) > 0.0) {
+                normal = -normal;
             }
-            curx = trace_calc(beg, end, vec3(curx.x + 1, 0.5, 0.5));
-        }
-        if (arr[2] == cury) {
-            vec3 coords = floor(cury - grid_beg);
+            vec3 coords = floor(curx - 0.5 * normal);
             int grid_ind = int(coords.x + coords.y * grid_size.x + coords.z * grid_size.x * grid_size.y);
-            if (coords.x >= 0 && coords.y >= 0 && coords.x >= 0 && grid_buf[grid_ind + offset].a != 0.0) {
-                return Raylaunching_response(node_num, cury + grid_beg, build_normal(cury, vec3(0, 0, 0), grid_size), vec4(grid_buf[grid_ind + offset].rgb, 1.0));
+            if (belongs(vec3(0, 0, 0), grid_size - vec3(1, 1, 1), coords) && grid_buf[grid_ind + offset].a != 0.0) {
+                return Raylaunching_response(node_num, curx + grid_beg, normal, vec4(grid_buf[grid_ind + offset].rgb, 1.0));
             }
-            cury = trace_calc(beg, end, vec3(0.5, cury.y + 1, 0.5));
+            curx = trace_calc(beg, end, vec3(curx.x + ray_step.x, 0.5, 0.5));
         }
-        if (arr[2] == curz) {
-            vec3 coords = floor(curz - grid_beg);
+        if (arr[1] == cury) {
+            vec3 normal = vec3(0, 1, 0);
+            if (dot(normalize(delta), normal) > 0.0) {
+                normal = -normal;
+            }
+            vec3 coords = floor(cury - 0.5 * normal);
             int grid_ind = int(coords.x + coords.y * grid_size.x + coords.z * grid_size.x * grid_size.y);
-            if (coords.x >= 0 && coords.y >= 0 && coords.x >= 0 && grid_buf[grid_ind + offset].a != 0.0) {
-                return Raylaunching_response(node_num, curz + grid_beg, build_normal(curz, vec3(0, 0, 0), grid_size), vec4(grid_buf[grid_ind + offset].rgb, 1.0));
+            if (belongs(vec3(0, 0, 0), grid_size - vec3(1, 1, 1), coords) && grid_buf[grid_ind + offset].a != 0.0) {
+                return Raylaunching_response(node_num, cury + grid_beg, normal, vec4(grid_buf[grid_ind + offset].rgb, 1.0));
             }
-            curz = trace_calc(beg, end, vec3(0.5, 0.5, curz.z + 1));
+            cury = trace_calc(beg, end, vec3(0.5, cury.y + ray_step.y, 0.5));
         }
-        arr = vec3[5](curx, cury, curz, beg, end);
+        if (arr[1] == curz) {
+            vec3 normal = vec3(0, 0, 1);
+            if (dot(normalize(delta), normal) > 0.0) {
+                normal = -normal;
+            }
+            vec3 coords = floor(curz - 0.5 * normal);
+
+            int grid_ind = int(coords.x + coords.y * grid_size.x + coords.z * grid_size.x * grid_size.y);
+            if (belongs(vec3(0, 0, 0), grid_size - vec3(1, 1, 1), coords) && grid_buf[grid_ind + offset].a != 0.0) {
+                return Raylaunching_response(node_num, curz + grid_beg, normal, vec4(grid_buf[grid_ind + offset].rgb, 1.0));
+            }
+            curz = trace_calc(beg, end, vec3(0.5, 0.5, curz.z + ray_step.z));
+        }
+        arr = vec3[5](beg, curx, cury, curz, end);
         arr = sort(arr, beg, beg, end);
     }
     return Raylaunching_response(-1, end, vec3(0,0,0), vec4(0, 0, 0, 0));
@@ -277,9 +296,11 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end, int offset_num) {
         }
         if (tree[node_num + offsets[offset_num]].terminal_empty_texture_using[0] != 0) {
             if (tree[node_num + offsets[offset_num]].terminal_empty_texture_using[3] != -1) {
-                return Raylaunching_response(-2, trve_end, vec3(0,0,0), vec4(1, 0, 0, 1));
+                //return Raylaunching_response(-2, trve_end, vec3(0,0,0), vec4(grid_buf[2].rgb, 1.0));
+                //return Raylaunching_response(-2, trve_end, vec3(0,0,0), vec4(1, 0, 0, 1));
                 int offset = tree[node_num + offsets[offset_num]].terminal_empty_texture_using[3];
-                Raylaunching_response res = trace_grid(node_num, offset, beg, end, r - l, l);
+                Raylaunching_response res = trace_grid(node_num, offset, beg, end, abs(r - l), l);
+
                 if (res.node_num != -1)
                     return res;
                 FragColor = vec4(0, 1, 0, 0);
@@ -407,17 +428,17 @@ void main() {
     if (ans.node_num != -2) {    
         if (ans.node_num != -1) {
             FragColor = vec4(tree[ans.node_num + offsets[scene]].color_refl.xyz, 1.0);
-            if (tree[ans.node_num + offsets[scene]].terminal_empty_texture_using[2] != 0) {
+            if (tree[ans.node_num + offsets[scene]].terminal_empty_texture_using[3] != -1 || tree[ans.node_num + offsets[scene]].terminal_empty_texture_using[2] != 0) {
                 FragColor = ans.texture_color;
             }
         }
                                                                                                                                                                                      
         // Light
         FragColor *= max(0, dot(ans.normal, normalize(cam.pos - ans.point)));
-        // Grid rendering
-        //    if (grid(ans.point)) {
-        //            FragColor = vec4(1, 1, 1, 1.0);
-        //    }
+        //Grid rendering
+        if (grid(ans.point)) {
+                FragColor = vec4(1, 1, 1, 1.0);
+        }
 
         // Fog
         float lin_fog_k = (cam.render_distance - LinearFogSize - distance(cam.pos, ans.point)) / LinearFogSize;

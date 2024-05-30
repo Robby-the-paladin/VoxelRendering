@@ -16,7 +16,7 @@
 
 #define M_PI 3.1415926535897932384626433832795
 
-int grid_depth = 0;
+int grid_depth = 2;
 
 // Function for conversion
 double degree_to_rad(double degree) {
@@ -138,7 +138,7 @@ void load_buffers() {
 
     glGenBuffers(1, &ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * grid_buffer.size(), borders.data(), GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * grid_buffer.size(), grid_buffer.data(), GL_STATIC_DRAW);
     binding_point_index = 12;
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
 }
@@ -169,7 +169,7 @@ void init(Shader* shader) {
         }
     }
     tree.build(mat, shader);*/
-    vector<string> files = { "3.vox"};
+    vector<string> files = { "room.vox"};
 
     for (auto file : files) {
 

@@ -4,13 +4,11 @@ void Tree::grid_build(vector<vector<vector<Voxel>>>* mat, Vec3 beg, Vec3 end, ve
 	for (int i = beg.x; i < end.x; i++) {
 		for (int j = beg.y; j < end.y; j++) {
 			for (int k = beg.z; k < end.z; k++) {
-				cout << "\n l " << beg.x << " " << beg.y << " " << beg.z << " r " << end.x << " " << end.y << " " << end.z << "\n";
-				cout << "\n" << i << " " << j << " " << k << "\n";
 				if (mat->size() <= i || mat->operator[](i).size() <= j || mat->operator[](i)[j].size() <= k)
 					grid_buffer.push_back(glm::vec4(0, 0, 0, 0));
 				else {
-					auto mat_cell = mat->operator[](i)[j][k];
-					grid_buffer.push_back(glm::vec4(mat_cell.color.r, mat_cell.color.g, mat_cell.color.b, !mat_cell.empty));
+					auto mat_cell = mat->operator[](i)[k][j];
+					grid_buffer.push_back(glm::vec4(mat_cell.color.r / 255.0, mat_cell.color.g / 255.0, mat_cell.color.b / 255.0, !mat_cell.empty));
 				}
 			}
 		}

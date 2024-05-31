@@ -60,6 +60,8 @@ uniform Camera cam;
 
 uniform int scenes_number;
 
+uniform float quantization_distanse;
+
 bool belongs(vec3 l, vec3 r, vec3 point) {
     float eps = 0.0001;
     vec3 new_l = vec3(min(l.x, r.x), min(l.y, r.y), min(l.z, r.z));
@@ -316,6 +318,9 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end, int offset_num) {
                 return Raylaunching_response(node_num, beg, build_normal(beg, l, r), get_texture_color(node_num, beg, l, r, offset_num));
             }
         }
+        if (length(beg - cam.pos) > quantization_distanse) {
+            return Raylaunching_response(node_num, beg, build_normal(beg, l, r), vec4(tree[node_num + offsets[offset_num]].color_refl.xyz, 1.0));
+        }
         vec3 ap[3] = line_plane_intersections(beg, end, int((l.x + r.x) / 2), int((l.y + r.y) / 2), int((l.z + r.z) / 2));
         vec3 p[5];
         for (int i = 0; i < 3; i++) {
@@ -437,10 +442,10 @@ void main() {
                                                                                                                                                                                      
         // Light
         FragColor *= max(0, dot(ans.normal, normalize(cam.pos - ans.point)));
-        //Grid rendering
-        if (grid(ans.point)) {
-                FragColor = vec4(1, 1, 1, 1.0);
-        }
+//        //Grid rendering
+//        if (grid(ans.point)) {
+//                FragColor = vec4(1, 1, 1, 1.0);
+//        }
 
         // Fog
         float lin_fog_k = (cam.render_distance - LinearFogSize - distance(cam.pos, ans.point)) / LinearFogSize;

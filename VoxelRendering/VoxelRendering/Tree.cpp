@@ -38,15 +38,39 @@ Node* Tree::recursive_build(vector<vector<vector<Voxel>>>* mat, Vec3 coords0, Ve
 		return ans;
 	}
 	Node* children[8];
+	
+	vector<Color> colors;
 	for (int i = 0; i < 2; i++) {
 		for (int j = 0; j < 2; j++) {
 			for (int k = 0; k < 2; k++) {
 				Vec3 add = Vec3(i * (coords1.x - coords0.x) / 2, j * (coords1.y - coords0.y) / 2, k * (coords1.z - coords0.z) / 2);
 				children[i * 4 + j * 2 + k] = recursive_build(mat, coords0 + add, ((coords1 + coords0) / 2) + add, grid_buffer, grid_depth - 1);
+				if (!children[i * 4 + j * 2 + k]->terminal || !children[i * 4 + j * 2 + k]->voxel.empty)
+					colors.push_back(children[i * 4 + j * 2 + k]->voxel.color);
 			}
 		}
 	}
-	return new Node(children);
+
+	auto res = new Node(children);
+	
+	res->voxel.color = Color(0, 0, 0, 1);
+
+	for (int i = 0; i < colors.size(); i++) {
+		res->voxel.color.r += colors[i].r;
+		res->voxel.color.g += colors[i].g;
+		res->voxel.color.b += colors[i].b;
+	}
+
+	if (colors.size()) {
+		res->voxel.color.r /= colors.size();
+		res->voxel.color.g /= colors.size();
+		res->voxel.color.b /= colors.size();
+
+		//cout << res->voxel.color.r << " " << res->voxel.color.g << " " << res->voxel.color.b << "\n";
+	}
+
+
+	return res;
 }
 
 void Tree::build(vector<vector<vector<Voxel>>> mat, vector<glm::vec4>& grid_buffer, int grid_depth) {
@@ -398,14 +422,4 @@ void Tree::recursive_set(Node* node, Vec3 l, Vec3 r, Vec3 coords0, Vec3 coords1,
 
 void Tree::set(Vec3 coords0, Vec3 coords1, Voxel value, vector<glm::vec4>& grid_buffer) {
 	recursive_set(&root, Vec3(0, 0, 0), Vec3(max_size, max_size, max_size), coords0, coords1, value, grid_buffer);
-}
-
-void Tree::shader_serializing(Shader* shader) {
-	//Vec3 l = Vec3(0, 0, 0), r = Vec3(max_size, max_size, max_size);
-	//// Setting subroot coords
-	//shader->set3f("treel", l.x, l.y, l.z);
-	//shader->set3f("treer", r.x, r.y, r.z);
-
-	//cout << "treel " << l.x << " " << l.y << " " << l.z << "\n";
-	//cout << "treer " << r.x << " " << r.y << " " << r.z << "\n";
 }

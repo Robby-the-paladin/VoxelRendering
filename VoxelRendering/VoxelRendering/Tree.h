@@ -63,7 +63,5 @@ public:
 	void destroy();
 	void set(Vec3 coords0, Vec3 coords1, Voxel value, vector<glm::vec4>& grid_buffer);
 	Voxel* get(Vec3 coords, vector<glm::vec4>& grid_buffer);
-	
-	void shader_serializing(Shader* shader);
 };
 

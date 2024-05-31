@@ -23,6 +23,7 @@ using namespace std;
 int grid_depth = 0;
 std::vector<std::string> scenes;
 bool cache = false;
+float quantization_distanse = 100.0;
 
 // Function for conversion
 double degree_to_rad(double degree) {
@@ -60,6 +61,7 @@ vector<Tree> trees;
 
 void load_scenes() {
     for (auto tree : trees) {
+        cout << "Root color " << tree.root.voxel.color.r << " " << tree.root.voxel.color.g << " " << tree.root.voxel.color.b << "\n";
         offsets.push_back(scene_buffer.size());
         // Finding subroot (minimal root containing beg & end)
         Node* subroot = &tree.root;
@@ -285,6 +287,7 @@ void data_packing(Shader* shader,
     shader->set3f("cam.dir", cam_dir_x, cam_dir_y, cam_dir_z);
     shader->setFloat("cam.render_distance", cam_dist);
     shader->setFloat("cam.viewing_angle", viewing_angle);
+    shader->setFloat("quantization_distanse", quantization_distanse);
 
 }
 
@@ -325,6 +328,9 @@ int main()
 
     if (config["cache"])
         cache = config["cache"].as<bool>();
+
+    if (config["quantization_distanse"])
+        quantization_distanse = config["quantization_distanse"].as<float>();
 
     scenes = config["scenes"].as<std::vector<std::string>>();
     sc_offsets.resize(scenes.size());

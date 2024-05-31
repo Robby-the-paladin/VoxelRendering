@@ -11,12 +11,17 @@
 #include <glm.hpp>
 #include <queue>
 #include <vector>
+#include <fstream>
+#include <yaml-cpp/yaml.h>
 
 #include <iostream>
 
 #define M_PI 3.1415926535897932384626433832795
 
+using namespace std;
+
 int grid_depth = 0;
+std::vector<std::string> scenes;
 
 // Function for conversion
 double degree_to_rad(double degree) {
@@ -51,6 +56,7 @@ vector<Sh_node> scene_buffer;
 vector<Tree> trees;
 
 void load_buffers() {
+    
     //cout << trees.size() << "\n";
     for (auto tree : trees) {
         offsets.push_back(scene_buffer.size());
@@ -70,8 +76,6 @@ void load_buffers() {
             if (cur->terminal) {
                 node.terminal_empty_texture_using[1] = cur->voxel.empty;
                 node.terminal_empty_texture_using[2] = cur->voxel.texture_num;
-                if (cur->grid_offset != -1)
-                    cout << "\ngoff " << cur->grid_offset << "\n";
                 node.terminal_empty_texture_using[3] = cur->grid_offset;
                 node.color_refl[0] = 1.0 * cur->voxel.color.r / 255.0;
                 node.color_refl[1] = 1.0 * cur->voxel.color.g / 255.0;
@@ -97,8 +101,6 @@ void load_buffers() {
 
     GLuint ssbo;
 
-    cout << scene_buffer.size();
-
     Sh_node* s = scene_buffer.data();
     glGenBuffers(1, &ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
@@ -106,12 +108,6 @@ void load_buffers() {
 
     GLuint binding_point_index = 3;
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
-
-    cout << "\n" << offsets.size() << "\n";
-
-    for (int i = 0; i < offsets.size(); i++) {
-        cout << offsets[i] << "\n";
-    }
     
     int* sh_offsets = offsets.data();
 
@@ -122,19 +118,11 @@ void load_buffers() {
     binding_point_index = 6;
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
 
-    cout << "\n" << borders.size() << "\n";
-
-    for (int i = 0; i < borders.size(); i++) {
-        cout << borders[i].r << " " << borders[i].g << " " << borders[i].b << "\n";
-    }
-
     glGenBuffers(1, &ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
     glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * borders.size(), borders.data(), GL_DYNAMIC_COPY);
     binding_point_index = 10;
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
-
-    cout << "\n" << grid_buffer.size() << "\n";
 
     glGenBuffers(1, &ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
@@ -151,27 +139,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void init(Shader* shader) {
-    /*vector<vector<vector<Voxel>>> mat;
-    int _size = 256;
-
-    mat.resize(_size);
-    for (int i = 0; i < _size; i++) {
-        mat[i].resize(_size);
-        for (int j = 0; j < _size; j++) {
-            mat[i][j].resize(_size);
-            for (int k = 0; k < _size; k++) {
-                mat[i][j][k].color = Color(0, 200, 0, 255);
-                mat[i][j][k].empty = true;
-                mat[i][j][k].reflection_k = 0;
-                if (k * 0.1 < sin(i * 0.1) * 3 + sin(j * 0.23) * 3.5)
-                    mat[i][j][k].empty = false;
-            }
-        }
-    }
-    tree.build(mat, shader);*/
-    vector<string> files = { "room.vox", "sphere.vox"};
-
-    for (auto file : files) {
+    for (auto file : scenes) {
 
         trees.push_back({});
 
@@ -182,11 +150,6 @@ void init(Shader* shader) {
     }
 
     load_buffers();
-
-    //shader->setInt("scenes_number", 1);
-
-
-    //shader->addTextures(std::vector<std::string>({ "texture.jpg"}));
 
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
@@ -282,6 +245,7 @@ void data_packing(Shader* shader,
     float cam_dir_x, float cam_dir_y, float cam_dir_z,
     float cam_dist, float viewing_angle) {
 
+    shader->setInt("scenes_number", trees.size());
     shader->set2f("cam.resolution", cam_res_x, cam_res_y);
     shader->set3f("cam.pos", cam_pos_x, cam_pos_y, cam_pos_z);
     shader->set3f("cam.dir", cam_dir_x, cam_dir_y, cam_dir_z);
@@ -312,6 +276,29 @@ void step(Shader* shader) {
 
 int main()
 {
+    // Загрузка YAML файла
+    YAML::Node config = YAML::LoadFile("settings.yaml");
+
+    std::string structure = config["structure"].as<std::string>();
+
+    if (structure == "Octree")
+        grid_depth = -1;
+    if (structure == "Grid")
+        grid_depth = 0;
+    if (structure == "HierarchicalGrid" && config["grid_level"])
+        grid_depth = config["grid_level"].as<int>();
+
+    scenes = config["scenes"].as<std::vector<std::string>>();
+
+    // Вывод значений на экран
+    std::cout << "Structure: " << structure << std::endl;
+    std::cout << "Grid depth: " << grid_depth << std::endl;
+    std::cout << "Scenes:" << std::endl;
+
+    for (const auto& feature : scenes) {
+        std::cout << "- " << feature << std::endl;
+    }
+
     glfwInit();
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

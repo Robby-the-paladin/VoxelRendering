@@ -14,7 +14,6 @@ const float LinearFogSize = 250;
 // Hyperbolic fog decreases as FogDistacnce / dist ^ FogPower, creates more beautiful result than linear one
 const float HyperbolicFogDistacnce = 10;
 const float HyperbolicFogPower = 0.5;
-const int scenes_number = 2;
 const vec3 FogColor = vec3(0,0.5,0.6);
 // Sky light
 const vec3 LightDir = normalize(vec3(2,1,1));
@@ -58,6 +57,8 @@ layout(std430, binding = 12) buffer grid_buffer
 };
 
 uniform Camera cam;
+
+uniform int scenes_number;
 
 bool belongs(vec3 l, vec3 r, vec3 point) {
     float eps = 0.0001;

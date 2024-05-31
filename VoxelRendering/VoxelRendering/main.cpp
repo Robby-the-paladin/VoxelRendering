@@ -22,11 +22,14 @@ using namespace std;
 
 int grid_depth = 0;
 std::vector<std::string> scenes;
+bool cache = false;
 
 // Function for conversion
 double degree_to_rad(double degree) {
     return (degree * (M_PI / 180));
 }
+
+std::vector<glm::vec3> sc_offsets;
 
 GLFWwindow* window;
 bool keys[1024];
@@ -55,13 +58,10 @@ vector<Sh_node> scene_buffer;
 
 vector<Tree> trees;
 
-void load_buffers() {
-    
-    //cout << trees.size() << "\n";
+void load_scenes() {
     for (auto tree : trees) {
         offsets.push_back(scene_buffer.size());
         // Finding subroot (minimal root containing beg & end)
-        bool cycle = true;
         Node* subroot = &tree.root;
         // Init bfs queue
         queue<pair<Node*, pair<int, int>>> q;
@@ -104,16 +104,23 @@ void load_buffers() {
     Sh_node* s = scene_buffer.data();
     glGenBuffers(1, &ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sh_node) * scene_buffer.size(), s, GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Sh_node) * scene_buffer.size(), s, GL_DYNAMIC_COPY);
 
     GLuint binding_point_index = 3;
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
+}
+
+void load_buffers() {
+    load_scenes();
+
+    GLuint ssbo;
+    GLuint binding_point_index;
     
     int* sh_offsets = offsets.data();
 
     glGenBuffers(1, &ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(int) * offsets.size(), sh_offsets, GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(int) * offsets.size(), sh_offsets, GL_DYNAMIC_COPY);
 
     binding_point_index = 6;
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
@@ -126,7 +133,7 @@ void load_buffers() {
 
     glGenBuffers(1, &ssbo);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * grid_buffer.size(), grid_buffer.data(), GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * grid_buffer.size(), grid_buffer.data(), GL_DYNAMIC_COPY);
     binding_point_index = 12;
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding_point_index, ssbo);
 }
@@ -139,11 +146,21 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void init(Shader* shader) {
-    for (auto file : scenes) {
+    if (cache) {
+        for (auto file : scenes) {
 
+            trees.push_back({});
+
+            trees.back().load_vox_file(file, grid_buffer, grid_depth);
+
+            borders.push_back(glm::vec4(0, 0, 0, 0));
+            borders.push_back(glm::vec4(trees.back().max_size, trees.back().max_size, trees.back().max_size, 0));
+        }
+    }
+    else {
         trees.push_back({});
 
-        trees.back().load_vox_file(file, grid_buffer, grid_depth);
+        trees.back().load_vox_files(scenes, grid_buffer, grid_depth, sc_offsets);
 
         borders.push_back(glm::vec4(0, 0, 0, 0));
         borders.push_back(glm::vec4(trees.back().max_size, trees.back().max_size, trees.back().max_size, 0));
@@ -221,8 +238,25 @@ void do_movement() {
 
         GLuint ssbo;
 
-        borders[2] = borders[2] + glm::vec4(1, 0, 0, 0);
-        borders[3] = borders[3] + glm::vec4(1, 0, 0, 0);
+        if (cache) {
+            if (borders.size() >= 4) {
+                borders[2] = borders[2] + glm::vec4(1, 0, 0, 0);
+                borders[3] = borders[3] + glm::vec4(1, 0, 0, 0);
+            }
+        }
+        else {
+            if (scenes.size() > 1) {
+                sc_offsets[1] += glm::vec3(20, 0, 0);
+                trees.pop_back();
+                trees.push_back(Tree());
+                trees.back().load_vox_files(scenes, grid_buffer, grid_depth, sc_offsets);
+
+                borders[0] = (glm::vec4(0, 0, 0, 0));
+                borders[1] = (glm::vec4(trees.back().max_size, trees.back().max_size, trees.back().max_size, 0));
+
+                load_buffers();
+            }
+        }
 
         glGenBuffers(1, &ssbo);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
@@ -288,6 +322,7 @@ int main()
         grid_depth = config["grid_level"].as<int>();
 
     scenes = config["scenes"].as<std::vector<std::string>>();
+    sc_offsets.resize(scenes.size());
 
     // Вывод значений на экран
     std::cout << "Structure: " << structure << std::endl;

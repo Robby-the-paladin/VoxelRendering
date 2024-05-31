@@ -167,6 +167,7 @@
     <ClInclude Include="Voxel.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="settings.yaml" />
     <None Include="shader.frag" />
     <None Include="shader.vert" />
   </ItemGroup>

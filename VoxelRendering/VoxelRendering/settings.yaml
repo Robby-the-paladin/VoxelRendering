@@ -3,4 +3,3 @@ grid_level: 0 # Only for HierarchicalGrid
 scenes:
   - room.vox
   - sphere.vox
-  - sphere.vox

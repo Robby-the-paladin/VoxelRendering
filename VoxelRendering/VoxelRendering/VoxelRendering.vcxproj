@@ -78,13 +78,13 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\libraries\glm;C:\libraries\glfw\include;C:\libraries\glad\include;C:\libraries\glad;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\libraries\glfw\build\src\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\libraries\glm;..\..\libraries\glfw\include;..\..\libraries\glad\include;..\..\libraries\glad;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\libraries\glfw\build\src\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\libraries\glm;C:\libraries\glfw\include;C:\libraries\glad\include;C:\libraries\glad;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\libraries\glfw\build\src\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\..\libraries\glm;..\..\libraries\glfw\include;..\..\libraries\glad\include;..\..\..\libraries\glad;$(IncludePath)</IncludePath>
+    <LibraryPath>..\..\libraries\glfw\build\src\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

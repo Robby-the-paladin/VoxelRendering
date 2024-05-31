@@ -1,7 +1,7 @@
-structure: Octree # Octree Grid HierarchicalGrid
-grid_level: 0 # Only for HierarchicalGrid
+structure: Grid
+grid_level: 0
 cache: true
-quantization_distanse: 50.0
+quantization_distanse: 1000.0
 scenes:
   - room.vox
   - sphere.vox

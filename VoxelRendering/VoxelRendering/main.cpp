@@ -111,6 +111,8 @@ void load_scenes() {
 }
 
 void load_buffers() {
+    scene_buffer.clear();
+
     load_scenes();
 
     GLuint ssbo;
@@ -246,7 +248,7 @@ void do_movement() {
         }
         else {
             if (scenes.size() > 1) {
-                sc_offsets[1] += glm::vec3(20, 0, 0);
+                sc_offsets[1] += glm::vec3(1, 0, 0);
                 trees.pop_back();
                 trees.push_back(Tree());
                 trees.back().load_vox_files(scenes, grid_buffer, grid_depth, sc_offsets);
@@ -320,6 +322,9 @@ int main()
         grid_depth = 0;
     if (structure == "HierarchicalGrid" && config["grid_level"])
         grid_depth = config["grid_level"].as<int>();
+
+    if (config["cache"])
+        cache = config["cache"].as<bool>();
 
     scenes = config["scenes"].as<std::vector<std::string>>();
     sc_offsets.resize(scenes.size());

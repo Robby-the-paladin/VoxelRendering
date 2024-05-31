@@ -163,6 +163,10 @@ void init(Shader* shader) {
     cam_dir[2] = 1;
 }
 
+#ifdef DEBUG
+int delay = 0;
+#endif // DEBUG
+
 void mouse_callback()
 {
     double xpos, ypos;
@@ -220,12 +224,6 @@ void do_movement() {
         borders[2] = borders[2] + glm::vec4(1, 0, 0, 0);
         borders[3] = borders[3] + glm::vec4(1, 0, 0, 0);
 
-        cout << "\n" << borders.size() << "\n";
-
-        for (int i = 0; i < borders.size(); i++) {
-            cout << borders[i].r << " " << borders[i].g << " " << borders[i].b << "\n";
-        }
-
         glGenBuffers(1, &ssbo);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
         glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * borders.size(), borders.data(), GL_DYNAMIC_COPY);
@@ -270,7 +268,8 @@ void step(Shader* shader) {
     while (aux::get_milli_count() - fps.front() > 1000) {
         fps.pop();
     }
-    cout << "fps: " << fps.size() << " ";
+    if (delay < 0)
+        cout << "fps: " << fps.size() << " ";
 #endif // DEBUG
 }
 
@@ -390,7 +389,11 @@ int main()
         step(&VShader);
 #ifdef DEBUG
         step_time = aux::get_milli_count() - step_time;
-        cout << "stime: " << step_time << " rtime: " << render_time << endl;
+        if (delay < 0) {
+            cout << "stime: " << step_time << " rtime: " << render_time << std::endl;
+            delay = 10;
+        }
+        delay--;
         render_time = aux::get_milli_count();
 #endif // DEBUG
 

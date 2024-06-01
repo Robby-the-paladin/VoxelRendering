@@ -1,4 +1,4 @@
-structure: Grid
+structure: Octree
 grid_level: 0
 cache: true
 quantization_distanse: 1000.0

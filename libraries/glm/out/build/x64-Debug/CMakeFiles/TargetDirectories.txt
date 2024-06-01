@@ -1,0 +1,2 @@
+C:/Users/mea25/Desktop/Voxel/VoxelRendering/libraries/glm/out/build/x64-Debug/CMakeFiles/edit_cache.dir
+C:/Users/mea25/Desktop/Voxel/VoxelRendering/libraries/glm/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir

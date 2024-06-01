@@ -131,7 +131,7 @@ vec3 cubic_selection(vec3 beg, vec3 end, int offset_num) {
     vec3 new_beg = end + (end - beg);
     vec3 ap[3] = line_plane_intersections(beg, end, borders[offset_num * 2].x, borders[offset_num * 2].y, borders[offset_num * 2].z);
     for (int i = 0; i < 3; i++) {
-        if (belongs(borders[offsets[offset_num] * 2].rgb, borders[offset_num * 2 + 1].rgb, ap[i]) && belongs(beg, end, ap[i])) {
+        if (belongs(borders[offset_num * 2].rgb, borders[offset_num * 2 + 1].rgb, ap[i]) && belongs(beg, end, ap[i])) {
             if (distance(beg, new_beg) > distance(beg, ap[i])) {
                 new_beg = ap[i];
             }
@@ -139,7 +139,7 @@ vec3 cubic_selection(vec3 beg, vec3 end, int offset_num) {
     }
     vec3 ap2[3] = line_plane_intersections(beg, end, borders[offset_num * 2 + 1].x, borders[offset_num * 2 + 1].y, borders[offset_num * 2 + 1].z);
     for (int i = 0; i < 3; i++) {
-        if (belongs(borders[offsets[offset_num] * 2].rgb, borders[offset_num * 2 + 1].rgb, ap2[i]) && belongs(beg, end, ap2[i])) {
+        if (belongs(borders[offset_num * 2].rgb, borders[offset_num * 2 + 1].rgb, ap2[i]) && belongs(beg, end, ap2[i])) {
             if (distance(beg, new_beg) > distance(beg, ap2[i])) {
                 new_beg = ap2[i];
             }
@@ -273,15 +273,15 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end, int offset_num) {
     Raycasting_request raycasting_requests[MAX_STACK_SIZE];
     int top_num = -1;
     top_num++;
-    if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offset_num * 2 + 1].rgb, beg)) {
+    if (!belongs(borders[offset_num * 2 ].rgb, borders[offset_num * 2 + 1].rgb, beg)) {
          beg = cubic_selection(beg, end, offset_num);
-         if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offset_num * 2 + 1].rgb, beg)) {
+         if (!belongs(borders[offset_num * 2 ].rgb, borders[offset_num * 2 + 1].rgb, beg)) {
             return Raylaunching_response(-1, end, vec3(0,0,0), vec4(0, 0, 0, 0));
          }
     }
-    if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offset_num * 2 + 1].rgb, end)) {
+    if (!belongs(borders[offset_num * 2 ].rgb, borders[offset_num * 2 + 1].rgb, end)) {
          end = cubic_selection(end, beg, offset_num);
-         if (!belongs(borders[offsets[offset_num] * 2 ].rgb, borders[offset_num * 2 + 1].rgb, end)) {
+         if (!belongs(borders[offset_num * 2 ].rgb, borders[offset_num * 2 + 1].rgb, end)) {
             return Raylaunching_response(-1, end, vec3(0,0,0), vec4(0, 0, 0, 0));
          }
     }
@@ -425,7 +425,9 @@ void main() {
     Raylaunching_response ans = raylaunching(beg, end, 0);
     int scene = 0;
     for (int i = 1; i < scenes_number; i++) {
-        Raylaunching_response scene_ans = raylaunching(beg, ans.point, i);
+        if (ans.node_num != -1)
+            end = ans.point;
+        Raylaunching_response scene_ans = raylaunching(beg, end, i);
         if (scene_ans.node_num != -1) {
             ans = scene_ans;
             scene = i;

@@ -62,6 +62,8 @@ uniform int scenes_number;
 
 uniform float quantization_distanse;
 
+uniform int quantization_depth;
+
 bool belongs(vec3 l, vec3 r, vec3 point) {
     float eps = 0.0001;
     vec3 new_l = vec3(min(l.x, r.x), min(l.y, r.y), min(l.z, r.z));
@@ -118,6 +120,7 @@ struct Raycasting_request {
     int node_num;
     vec3 l;
     vec3 r;
+    int qdepth;
 };
 
 struct Raycasting_response {
@@ -285,7 +288,7 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end, int offset_num) {
             return Raylaunching_response(-1, end, vec3(0,0,0), vec4(0, 0, 0, 0));
          }
     }
-    raycasting_requests[top_num] = Raycasting_request(beg, end, 0, borders[offset_num * 2].rgb, borders[offset_num * 2 + 1].rgb);
+    raycasting_requests[top_num] = Raycasting_request(beg, end, 0, borders[offset_num * 2].rgb, borders[offset_num * 2 + 1].rgb, quantization_depth);
     while(top_num != -1) {
         Raycasting_request req = raycasting_requests[top_num];
         top_num--;
@@ -318,7 +321,7 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end, int offset_num) {
                 return Raylaunching_response(node_num, beg, build_normal(beg, l, r), get_texture_color(node_num, beg, l, r, offset_num));
             }
         }
-        if (length(beg - cam.pos) > quantization_distanse) {
+        if (length(beg - cam.pos) > quantization_distanse && req.qdepth <= 0) {
             return Raylaunching_response(node_num, beg, build_normal(beg, l, r), vec4(tree[node_num + offsets[offset_num]].color_refl.xyz, 1.0));
         }
         vec3 ap[3] = line_plane_intersections(beg, end, int((l.x + r.x) / 2), int((l.y + r.y) / 2), int((l.z + r.z) / 2));
@@ -354,7 +357,7 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end, int offset_num) {
                                         top_num--;
                                         continue;
                                     } else {
-                                        raycasting_requests[top_num] = Raycasting_request(p[t-1], p[t], new_num, newl, newr);
+                                        raycasting_requests[top_num] = Raycasting_request(p[t-1], p[t], new_num, newl, newr, (t == 4) ? req.qdepth : req.qdepth - 1);
                                     }
                                 }
                             }

@@ -23,7 +23,8 @@ using namespace std;
 int grid_depth = 0;
 std::vector<std::string> scenes;
 bool cache = false;
-float quantization_distanse = 100.0;
+float quantization_distanse = 1000.0;
+int quantization_depth = 8;
 
 // Function for conversion
 double degree_to_rad(double degree) {
@@ -79,10 +80,6 @@ void load_scenes() {
                 node.terminal_empty_texture_using[1] = cur->voxel.empty;
                 node.terminal_empty_texture_using[2] = cur->voxel.texture_num;
                 node.terminal_empty_texture_using[3] = cur->grid_offset;
-                node.color_refl[0] = 1.0 * cur->voxel.color.r / 255.0;
-                node.color_refl[1] = 1.0 * cur->voxel.color.g / 255.0;
-                node.color_refl[2] = 1.0 * cur->voxel.color.b / 255.0;
-                node.color_refl[3] = cur->voxel.reflection_k;
             }
             else {
                 for (int i = 0; i < 8; i++) {
@@ -91,6 +88,10 @@ void load_scenes() {
                     }
                 }
             }
+            node.color_refl[0] = 1.0 * cur->voxel.color.r / 255.0;
+            node.color_refl[1] = 1.0 * cur->voxel.color.g / 255.0;
+            node.color_refl[2] = 1.0 * cur->voxel.color.b / 255.0;
+            node.color_refl[3] = cur->voxel.reflection_k;
             if (q.front().second.first != -1) {
                 scene_buffer[q.front().second.first + offsets.back()].children[q.front().second.second] = k;
             }
@@ -288,6 +289,7 @@ void data_packing(Shader* shader,
     shader->setFloat("cam.render_distance", cam_dist);
     shader->setFloat("cam.viewing_angle", viewing_angle);
     shader->setFloat("quantization_distanse", quantization_distanse);
+    shader->setInt("quantization_depth", quantization_depth);
 
 }
 
@@ -331,6 +333,9 @@ int main()
 
     if (config["quantization_distanse"])
         quantization_distanse = config["quantization_distanse"].as<float>();
+
+    if (config["quantization_depth"])
+        quantization_depth = config["quantization_depth"].as<int>();
 
     scenes = config["scenes"].as<std::vector<std::string>>();
     sc_offsets.resize(scenes.size());

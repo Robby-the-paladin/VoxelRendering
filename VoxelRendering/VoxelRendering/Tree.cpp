@@ -5,7 +5,7 @@ void Tree::grid_build(vector<vector<vector<Voxel>>>& mat, Vec3 beg, Vec3 end, ve
 	for (int i = beg.x; i < end.x; i++) {
 		for (int j = beg.y; j < end.y; j++) {
 			for (int k = beg.z; k < end.z; k++) {
-				if (mat.size() <= k || mat[i].size() <= j || mat[k][j].size() <= i)
+				if (mat.size() <= k || mat[k].size() <= j || mat[k][j].size() <= i)
 					grid_buffer.push_back(glm::vec4(0, 0, 0, 0));
 				else {
 					auto mat_cell = mat[k][j][i];
@@ -17,13 +17,7 @@ void Tree::grid_build(vector<vector<vector<Voxel>>>& mat, Vec3 beg, Vec3 end, ve
 }
 
 Node* Tree::recursive_build(vector<vector<vector<Voxel>>>& mat, Vec3 coords0, Vec3 coords1, vector<glm::vec4>& grid_buffer, int grid_depth) {
-	if (grid_depth == 0) {
-		Node* ans = new Node();
-		ans->terminal = 1;
-		ans->grid_offset = grid_buffer.size();
-		grid_build(mat, coords0, coords1, grid_buffer);
-		return ans;
-	}
+	// Запись терминальной вершины
 	if (coords0 + Vec3(1, 1, 1) == coords1) {
 		if (mat.size() < coords1.x || mat[coords0.x].size() < coords1.y
 			|| mat[coords0.x][coords0.y].size() < coords1.z) {
@@ -37,6 +31,15 @@ Node* Tree::recursive_build(vector<vector<vector<Voxel>>>& mat, Vec3 coords0, Ve
 		ans->voxel = mat[coords0.x][coords0.y][coords0.z];
 		return ans;
 	}
+	// Генерация полной воксельной сетки
+	if (grid_depth == 0) {
+		Node* ans = new Node();
+		ans->terminal = 1;
+		ans->grid_offset = grid_buffer.size();
+		grid_build(mat, coords0, coords1, grid_buffer);
+		return ans;
+	}
+	
 	Node* children[8];
 	
 	vector<Color> colors;
@@ -45,6 +48,8 @@ Node* Tree::recursive_build(vector<vector<vector<Voxel>>>& mat, Vec3 coords0, Ve
 			for (int k = 0; k < 2; k++) {
 				Vec3 add = Vec3(i * (coords1.x - coords0.x) / 2, j * (coords1.y - coords0.y) / 2, k * (coords1.z - coords0.z) / 2);
 				children[i * 4 + j * 2 + k] = recursive_build(mat, coords0 + add, ((coords1 + coords0) / 2) + add, grid_buffer, grid_depth - 1);
+				if (i == 0 && j == 0 && k == 0)
+
 				if (!children[i * 4 + j * 2 + k]->terminal || !children[i * 4 + j * 2 + k]->voxel.empty)
 					colors.push_back(children[i * 4 + j * 2 + k]->voxel.color);
 			}
@@ -53,23 +58,18 @@ Node* Tree::recursive_build(vector<vector<vector<Voxel>>>& mat, Vec3 coords0, Ve
 
 	auto res = new Node(children);
 	
+	// Поиск среднего цвета вершины
 	res->voxel.color = Color(0, 0, 0, 1);
-
 	for (int i = 0; i < colors.size(); i++) {
 		res->voxel.color.r += colors[i].r;
 		res->voxel.color.g += colors[i].g;
 		res->voxel.color.b += colors[i].b;
 	}
-
 	if (colors.size()) {
 		res->voxel.color.r /= colors.size();
 		res->voxel.color.g /= colors.size();
 		res->voxel.color.b /= colors.size();
-
-		//cout << res->voxel.color.r << " " << res->voxel.color.g << " " << res->voxel.color.b << "\n";
 	}
-
-
 	return res;
 }
 

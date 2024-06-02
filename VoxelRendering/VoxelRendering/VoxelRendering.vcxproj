@@ -155,6 +155,7 @@
     <ClCompile Include="Tree.cpp" />
     <ClCompile Include="Vec3.cpp" />
     <ClCompile Include="Voxel.cpp" />
+    <ClCompile Include="VOXLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AuxLib.h" />
@@ -165,6 +166,7 @@
     <ClInclude Include="Tree.h" />
     <ClInclude Include="Vec3.h" />
     <ClInclude Include="Voxel.h" />
+    <ClInclude Include="VOXLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="settings.yaml" />

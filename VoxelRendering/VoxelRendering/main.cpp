@@ -4,6 +4,7 @@
 
 #include "Shader.h"
 #include "Tree.h"
+#include "VOXLoader.h"
 #ifdef DEBUG
 #include "AuxLib.h"
 #endif // DEBUG
@@ -156,7 +157,9 @@ void init(Shader* shader) {
 
             trees.push_back({});
 
-            trees.back().load_vox_file(file, grid_buffer, grid_depth);
+            vector<vector<vector<Voxel>>> mat;
+            VOXLoader::load_vox_file(file, mat);
+            trees.back().build(mat, grid_buffer, grid_depth);
 
             borders.push_back(glm::vec4(0, 0, 0, 0));
             borders.push_back(glm::vec4(trees.back().max_size, trees.back().max_size, trees.back().max_size, 0));
@@ -165,7 +168,9 @@ void init(Shader* shader) {
     else {
         trees.push_back({});
 
-        trees.back().load_vox_files(scenes, grid_buffer, grid_depth, sc_offsets);
+        vector<vector<vector<Voxel>>> mat;
+        VOXLoader::load_vox_files(scenes, sc_offsets, mat);
+        trees.back().build(mat, grid_buffer, grid_depth);
 
         borders.push_back(glm::vec4(0, 0, 0, 0));
         borders.push_back(glm::vec4(trees.back().max_size, trees.back().max_size, trees.back().max_size, 0));
@@ -241,8 +246,6 @@ void do_movement() {
     if (keys[GLFW_KEY_LEFT_SHIFT]) {
         cameraSpeed = camera_speed * 2;
 
-        GLuint ssbo;
-
         if (cache) {
             if (borders.size() >= 4) {
                 borders[2] = borders[2] + glm::vec4(1, 0, 0, 0);
@@ -254,7 +257,9 @@ void do_movement() {
                 sc_offsets[1] += glm::vec3(1, 0, 0);
                 trees.pop_back();
                 trees.push_back(Tree());
-                trees.back().load_vox_files(scenes, grid_buffer, grid_depth, sc_offsets);
+                vector<vector<vector<Voxel>>> mat;
+                VOXLoader::load_vox_files(scenes, sc_offsets, mat);
+                trees.back().build(mat, grid_buffer, grid_depth);
 
                 borders[0] = (glm::vec4(0, 0, 0, 0));
                 borders[1] = (glm::vec4(trees.back().max_size, trees.back().max_size, trees.back().max_size, 0));
@@ -262,6 +267,8 @@ void do_movement() {
                 load_buffers();
             }
         }
+
+        GLuint ssbo;
 
         glGenBuffers(1, &ssbo);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);

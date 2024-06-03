@@ -1,4 +1,5 @@
 //#define DEBUG
+//#define TEST
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -338,8 +339,11 @@ void step(Shader* shader) {
 int main()
 {
 
+#ifdef TEST
     Test test;
     test.gen_test(128, 10, 4);
+#endif // TEST
+
     // Загрузка YAML файла
     YAML::Node config = YAML::LoadFile("settings.yaml");
 

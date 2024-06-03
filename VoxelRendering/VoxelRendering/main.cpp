@@ -12,6 +12,7 @@
 #include <glm.hpp>
 #include <queue>
 #include <vector>
+#include <random>
 #include <fstream>
 #include <yaml-cpp/yaml.h>
 
@@ -20,6 +21,18 @@
 #define M_PI 3.1415926535897932384626433832795
 
 using namespace std;
+
+//class test {
+//    int grid_depth = 0;
+//    std::vector<std::string> scenes;
+//    bool cache = false;
+//    float quantization_distanse = 1000.0;
+//    int quantization_depth = 8;
+//
+//    int seed = 2;
+//
+//    yaw = 
+//};
 
 int grid_depth = 0;
 std::vector<std::string> scenes;
@@ -61,6 +74,8 @@ vector<Sh_node> scene_buffer;
 
 vector<Tree> trees;
 
+int eqw = 0;
+
 void load_scenes() {
     for (auto tree : trees) {
         cout << "Root color " << tree.root.voxel.color.r << " " << tree.root.voxel.color.g << " " << tree.root.voxel.color.b << "\n";
@@ -74,6 +89,7 @@ void load_scenes() {
         q.push(make_pair(subroot, make_pair(-1, -1)));
         int k = 0;
         while (!q.empty()) {
+            //std::cout << "here " << eqw++ << "\n";
             Node* cur = q.front().first;
             Sh_node node;
             node.terminal_empty_texture_using[0] = cur->terminal;

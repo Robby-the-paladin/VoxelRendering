@@ -1,5 +1,5 @@
-structure: Octree
-grid_level: -1
+structure: HierarchicalGrid
+grid_level: 4
 cache: true
 quantization_distanse: 200.0
 quantization_depth: 5

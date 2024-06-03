@@ -1,7 +1,8 @@
 ﻿//#define wall
 #include "Tree.h"
 
-void Tree::grid_build(vector<vector<vector<Voxel>>>& mat, Vec3 beg, Vec3 end, vector<glm::vec4>& grid_buffer) {
+Color Tree::grid_build(vector<vector<vector<Voxel>>>& mat, Vec3 beg, Vec3 end, vector<glm::vec4>& grid_buffer) {
+	vector<Color> colors;
 	for (int i = beg.x; i < end.x; i++) {
 		for (int j = beg.y; j < end.y; j++) {
 			for (int k = beg.z; k < end.z; k++) {
@@ -10,10 +11,24 @@ void Tree::grid_build(vector<vector<vector<Voxel>>>& mat, Vec3 beg, Vec3 end, ve
 				else {
 					auto mat_cell = mat[k][j][i];
 					grid_buffer.push_back(glm::vec4(mat_cell.color.r / 255.0, mat_cell.color.g / 255.0, mat_cell.color.b / 255.0, !mat_cell.empty));
+					colors.push_back(mat_cell.color);
 				}
 			}
 		}
 	}
+
+	Color color = Color(0, 0, 0, 1);
+	for (int i = 0; i < colors.size(); i++) {
+		color.r += colors[i].r;
+		color.g += colors[i].g;
+		color.b += colors[i].b;
+	}
+	if (colors.size()) {
+		color.r /= colors.size();
+		color.g /= colors.size();
+		color.b /= colors.size();
+	}
+	return color;
 }
 
 Node* Tree::recursive_build(vector<vector<vector<Voxel>>>& mat, Vec3 coords0, Vec3 coords1, vector<glm::vec4>& grid_buffer, int grid_depth) {
@@ -36,7 +51,8 @@ Node* Tree::recursive_build(vector<vector<vector<Voxel>>>& mat, Vec3 coords0, Ve
 		Node* ans = new Node();
 		ans->terminal = 1;
 		ans->grid_offset = grid_buffer.size();
-		grid_build(mat, coords0, coords1, grid_buffer);
+		ans->voxel.color = grid_build(mat, coords0, coords1, grid_buffer);
+		ans->voxel.empty = false;
 		return ans;
 	}
 	Node* children[8];
@@ -44,7 +60,7 @@ Node* Tree::recursive_build(vector<vector<vector<Voxel>>>& mat, Vec3 coords0, Ve
 	for (int i = 0; i < 2; i++) {
 		for (int j = 0; j < 2; j++) {
 			for (int k = 0; k < 2; k++) {
-				Vec3 add = Vec3(i * (coords1.x - coords0.x) / 2, j * (coords1.y - coords0.y) / 2, k * (coords1.z - coords0.z) / 2);
+				Vec3 add = Vec3(k * (coords1.x - coords0.x) / 2, j * (coords1.y - coords0.y) / 2, i * (coords1.z - coords0.z) / 2);
 				children[i * 4 + j * 2 + k] = recursive_build(mat, coords0 + add, ((coords1 + coords0) / 2) + add, grid_buffer, grid_depth - 1);
 				if (!children[i * 4 + j * 2 + k]->terminal || !children[i * 4 + j * 2 + k]->voxel.empty)
 					colors.push_back(children[i * 4 + j * 2 + k]->voxel.color);

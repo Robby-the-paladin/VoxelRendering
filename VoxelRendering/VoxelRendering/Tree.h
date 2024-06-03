@@ -24,7 +24,7 @@ private:
 	Voxel* recursive_get(Node* node, Vec3 l, Vec3 r, Vec3 coords, vector<glm::vec4>& grid_buffer);
 	void recursive_set(Node* node, Vec3 l, Vec3 r, Vec3 coords0, Vec3 coords1, Voxel value, vector<glm::vec4>& grid_buffer);
 	void push(Node* node);
-	void grid_build(vector<vector<vector<Voxel>>>& mat, Vec3 beg, Vec3 end, vector<glm::vec4>& grid_buffer);
+	Color grid_build(vector<vector<vector<Voxel>>>& mat, Vec3 beg, Vec3 end, vector<glm::vec4>& grid_buffer);
 
 	GLuint ssbo = 0;
 public:

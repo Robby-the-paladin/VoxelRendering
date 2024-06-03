@@ -206,6 +206,7 @@ vec3 trace_calc(vec3 beg, vec3 end, vec3 point) {
 }
 
 Raylaunching_response trace_grid(int node_num, int offset, vec3 beg, vec3 end, vec3 grid_size, vec3 grid_beg) {
+    //return Raylaunching_response(-2, beg, vec3(0,0,0), vec4(1, 0, 0, 1));
     beg = beg - grid_beg;
     end = end - grid_beg;
         
@@ -301,9 +302,7 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end, int offset_num) {
             continue;
         }
         if (tree[node_num + offsets[offset_num]].terminal_empty_texture_using[0] != 0) {
-            if (tree[node_num + offsets[offset_num]].terminal_empty_texture_using[3] != -1) {
-                //return Raylaunching_response(-2, trve_end, vec3(0,0,0), vec4(grid_buf[2].rgb, 1.0));
-                //return Raylaunching_response(-2, trve_end, vec3(0,0,0), vec4(1, 0, 0, 1));
+            if (tree[node_num + offsets[offset_num]].terminal_empty_texture_using[3] != -1) {                
                 int offset = tree[node_num + offsets[offset_num]].terminal_empty_texture_using[3];
                 Raylaunching_response res = trace_grid(node_num, offset, beg, end, abs(r - l), l);
 
@@ -353,7 +352,6 @@ Raylaunching_response raylaunching(vec3 beg, vec3 end, int offset_num) {
                                     top_num++;
                                     if (top_num >= MAX_STACK_SIZE) {
                                         FragColor = vec4(1, 1, 1, 0);
-                                        top_num--;
                                         continue;
                                     } else {
                                         raycasting_requests[top_num] = Raycasting_request(p[t-1], p[t], new_num, newl, newr, (t == 4) ? req.qdepth : req.qdepth - 1);

@@ -297,7 +297,6 @@ void data_packing(Shader* shader,
     shader->setFloat("cam.viewing_angle", viewing_angle);
     shader->setFloat("quantization_distanse", quantization_distanse);
     shader->setInt("quantization_depth", quantization_depth);
-
 }
 
 void step(Shader* shader) {

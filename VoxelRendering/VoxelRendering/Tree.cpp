@@ -39,25 +39,19 @@ Node* Tree::recursive_build(vector<vector<vector<Voxel>>>& mat, Vec3 coords0, Ve
 		grid_build(mat, coords0, coords1, grid_buffer);
 		return ans;
 	}
-	
 	Node* children[8];
-	
 	vector<Color> colors;
 	for (int i = 0; i < 2; i++) {
 		for (int j = 0; j < 2; j++) {
 			for (int k = 0; k < 2; k++) {
 				Vec3 add = Vec3(i * (coords1.x - coords0.x) / 2, j * (coords1.y - coords0.y) / 2, k * (coords1.z - coords0.z) / 2);
 				children[i * 4 + j * 2 + k] = recursive_build(mat, coords0 + add, ((coords1 + coords0) / 2) + add, grid_buffer, grid_depth - 1);
-				if (i == 0 && j == 0 && k == 0)
-
 				if (!children[i * 4 + j * 2 + k]->terminal || !children[i * 4 + j * 2 + k]->voxel.empty)
 					colors.push_back(children[i * 4 + j * 2 + k]->voxel.color);
 			}
 		}
 	}
-
 	auto res = new Node(children);
-	
 	// Поиск среднего цвета вершины
 	res->voxel.color = Color(0, 0, 0, 1);
 	for (int i = 0; i < colors.size(); i++) {

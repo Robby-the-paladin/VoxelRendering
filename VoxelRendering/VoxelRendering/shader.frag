@@ -21,7 +21,6 @@ const vec3 LightDir = normalize(vec3(2,1,1));
 struct Node {
    int children[8]; // 4 * 8 = 32 byte
    int terminal_empty_texture_using[4]; // 16 byte
-   //int texture_nums; // 4 byte
    vec4 color_refl; // 16 byte
 };
 

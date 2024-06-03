@@ -1,7 +1,7 @@
-structure: Grid
-grid_level: 0
+structure: Octree
+grid_level: 2
 cache: true
-quantization_distanse: 200.0
+quantization_distanse: 100.0
 quantization_depth: 5
 scenes:
   - room.vox

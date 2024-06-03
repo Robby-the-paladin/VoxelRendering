@@ -60,7 +60,11 @@ Node* Tree::recursive_build(vector<vector<vector<Voxel>>>& mat, Vec3 coords0, Ve
 	for (int i = 0; i < 2; i++) {
 		for (int j = 0; j < 2; j++) {
 			for (int k = 0; k < 2; k++) {
-				Vec3 add = Vec3(k * (coords1.x - coords0.x) / 2, j * (coords1.y - coords0.y) / 2, i * (coords1.z - coords0.z) / 2);
+				Vec3 add;
+				if (grid_depth > 0)
+					add = Vec3(k * (coords1.x - coords0.x) / 2, j * (coords1.y - coords0.y) / 2, i * (coords1.z - coords0.z) / 2);
+				else
+					add = Vec3(i * (coords1.x - coords0.x) / 2, j * (coords1.y - coords0.y) / 2, k * (coords1.z - coords0.z) / 2);
 				children[i * 4 + j * 2 + k] = recursive_build(mat, coords0 + add, ((coords1 + coords0) / 2) + add, grid_buffer, grid_depth - 1);
 				if (!children[i * 4 + j * 2 + k]->terminal || !children[i * 4 + j * 2 + k]->voxel.empty)
 					colors.push_back(children[i * 4 + j * 2 + k]->voxel.color);

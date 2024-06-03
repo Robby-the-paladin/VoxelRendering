@@ -86,7 +86,7 @@ Node* Tree::recursive_build(vector<vector<vector<Voxel>>>& mat, Vec3 coords0, Ve
 void Tree::build(vector<vector<vector<Voxel>>>& mat, vector<glm::vec4>& grid_buffer, int grid_depth) {
 	max_size = max(max(mat.size(), mat[0].size()), mat[0][0].size());
 	max_size = (1 << int(log(max_size - 1) / log(2) + 1));
-	cout << "\n Max size = " << max_size << " real size " << mat.size() << " " << mat[0].size() << " " << mat[0][0].size() << "\n";
+	//cout << "\n Max size = " << max_size << " real size " << mat.size() << " " << mat[0].size() << " " << mat[0][0].size() << "\n";
 	root = *recursive_build(mat, Vec3(0, 0, 0), Vec3(max_size, max_size, max_size), grid_buffer, grid_depth);
 }
 

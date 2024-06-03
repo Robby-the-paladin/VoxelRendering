@@ -152,6 +152,7 @@
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="stb_image.cpp" />
+    <ClCompile Include="Test.cpp" />
     <ClCompile Include="Tree.cpp" />
     <ClCompile Include="Vec3.cpp" />
     <ClCompile Include="Voxel.cpp" />
@@ -163,6 +164,7 @@
     <ClInclude Include="Node.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="Test.h" />
     <ClInclude Include="Tree.h" />
     <ClInclude Include="Vec3.h" />
     <ClInclude Include="Voxel.h" />

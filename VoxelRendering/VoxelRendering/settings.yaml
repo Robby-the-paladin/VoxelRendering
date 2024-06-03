@@ -1,4 +1,4 @@
-structure: HierarchicalGrid
+structure: Octree
 grid_level: 4
 cache: true
 quantization_distanse: 200.0

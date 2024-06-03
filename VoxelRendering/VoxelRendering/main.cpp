@@ -17,22 +17,21 @@
 #include <yaml-cpp/yaml.h>
 
 #include <iostream>
+#include "Test.h"
 
 #define M_PI 3.1415926535897932384626433832795
 
 using namespace std;
 
-//class test {
-//    int grid_depth = 0;
-//    std::vector<std::string> scenes;
-//    bool cache = false;
-//    float quantization_distanse = 1000.0;
-//    int quantization_depth = 8;
-//
-//    int seed = 2;
-//
-//    yaw = 
-//};
+class test {
+    int grid_depth = 0;
+    std::vector<std::string> scenes;
+    bool cache = false;
+    float quantization_distanse = 1000.0;
+    int quantization_depth = 8;
+
+    int seed = 2;
+};
 
 int grid_depth = 0;
 std::vector<std::string> scenes;
@@ -78,7 +77,7 @@ int eqw = 0;
 
 void load_scenes() {
     for (auto tree : trees) {
-        cout << "Root color " << tree.root.voxel.color.r << " " << tree.root.voxel.color.g << " " << tree.root.voxel.color.b << "\n";
+        //cout << "Root color " << tree.root.voxel.color.r << " " << tree.root.voxel.color.g << " " << tree.root.voxel.color.b << "\n";
         offsets.push_back(scene_buffer.size());
         // Finding subroot (minimal root containing beg & end)
         Node* subroot = &tree.root;
@@ -338,6 +337,9 @@ void step(Shader* shader) {
 
 int main()
 {
+
+    Test test;
+    test.gen_test(128, 10, 4);
     // Загрузка YAML файла
     YAML::Node config = YAML::LoadFile("settings.yaml");
 
@@ -363,9 +365,9 @@ int main()
     sc_offsets.resize(scenes.size());
 
     // Вывод значений на экран
-    std::cout << "Structure: " << structure << std::endl;
+    /*std::cout << "Structure: " << structure << std::endl;
     std::cout << "Grid depth: " << grid_depth << std::endl;
-    std::cout << "Scenes:" << std::endl;
+    std::cout << "Scenes:" << std::endl;*/
 
     for (const auto& feature : scenes) {
         std::cout << "- " << feature << std::endl;

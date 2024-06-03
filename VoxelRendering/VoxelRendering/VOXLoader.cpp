@@ -72,7 +72,7 @@ void VOXLoader::load_vox_files(vector<string> names, const vector<glm::vec3>& of
 		fread(&ChunkY, 4, 1, fhandle);
 		fread(&ChunkZ, 4, 1, fhandle);
 		int _size = max(ChunkX + int(offsets[ind].r), max(ChunkY + int(offsets[ind].g), ChunkZ + int(offsets[ind].b)));
-		std::cout << "Mat size " << _size << " " << name << "\n";
+		//std::cout << "Mat size " << _size << " " << name << "\n";
 		mat.resize(max(_size, int(mat.size())));
 		for (int i = 0; i < mat.size(); i++) {
 			mat[i].resize(max(_size, int(mat.size())));
@@ -101,7 +101,7 @@ void VOXLoader::load_vox_files(vector<string> names, const vector<glm::vec3>& of
 		MainChunkChildrenSize -= ChunkContentSize;
 		MainChunkChildrenSize -= ChunkChildrenSize;
 		fread(&NumVoxels, 4, 1, fhandle);
-		cout << "ehh " << int(offsets[ind].r) << "\n";
+		//cout << "ehh " << int(offsets[ind].r) << "\n";
 		for (int i = 0; i < NumVoxels; i++) {
 			char pos;
 			fread(&pos, 1, 1, fhandle);
